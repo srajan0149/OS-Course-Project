@@ -15,7 +15,7 @@ Disassembly of section .text:
       1c:	e51b3008 	ldr	r3, [fp, #-8]
       20:	e59f2020 	ldr	r2, [pc, #32]	@ 48 <main+0x48>
       24:	e0c21392 	smull	r1, r2, r2, r3
-      28:	e1a022c2 	asr	r2, r2, #5
+      28:	e1a02142 	asr	r2, r2, #2
       2c:	e1a03fc3 	asr	r3, r3, #31
       30:	e0422003 	sub	r2, r2, r3
       34:	e51b3008 	ldr	r3, [fp, #-8]
@@ -23,7 +23,7 @@ Disassembly of section .text:
       3c:	e3a00001 	mov	r0, #1
       40:	eb000251 	bl	98c <printf>
       44:	eb000140 	bl	54c <exit>
-      48:	51eb851f 	.word	0x51eb851f
+      48:	66666667 	.word	0x66666667
       4c:	00001048 	.word	0x00001048
 
 00000050 <strcpy>:
