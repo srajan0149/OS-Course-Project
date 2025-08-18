@@ -14,5 +14,5 @@ main(int argc, char *argv[])
 
     printf(1, "Uptime: %d:%d:%d (hh:mm:ss)\n", hours,rem_minutes, rem_seconds);
 
-    exit();
+    exit(0);
 }

@@ -2,10 +2,11 @@
 #include "user.h"
 #include "param.h"
 
+
 int main(int argc, char *argv[]){
   if(argc <= 1){
     printf(2, "Error: Usage -> pause <seconds>\n");
-    exit();  
+    exit(1);  
   }
 
   else if(argc > 2){
@@ -14,11 +15,11 @@ int main(int argc, char *argv[]){
   int seconds = atoi(argv[1]);
   if(seconds <= 0){
     printf(2, "pause: invalid number of seconds\n");
-    exit(); 
+    exit(1); 
   }
 
   printf(2, "Pausing for %d seconds.... \n " , seconds);
   sleep(seconds * HZ);  
-  exit();  
+  exit(0);  
 }
 

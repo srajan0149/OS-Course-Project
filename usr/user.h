@@ -2,7 +2,13 @@ struct stat;
 
 // system calls
 int fork(void);
-int exit(void) __attribute__((noreturn));
+_Noreturn void _exit(int);
+
+static inline _Noreturn void exit(int status) {
+    _exit(status);
+}
+
+
 int wait(void);
 int pipe(int*);
 int write(int, void*, int);
