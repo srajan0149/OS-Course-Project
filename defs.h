@@ -21,6 +21,9 @@ struct stat;
 struct superblock;
 struct trapframe;
 
+
+struct uproc;
+
 typedef uint32	pte_t;
 typedef uint32  pde_t;
 extern  uint32  _kernel_pgtbl;
@@ -125,6 +128,7 @@ int             pipewrite(struct pipe*, char*, int);
 struct proc*    copyproc(struct proc*);
 void            exit(int);
 int             fork(void);
+void            getprocs(struct uproc*);
 int             growproc(int);
 int             kill(int);
 void            pinit(void);

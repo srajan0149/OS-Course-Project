@@ -68,6 +68,9 @@ static struct proc* allocproc(void)
     found:
     p->state = EMBRYO;
     p->pid = nextpid++;
+
+    p->num_syscalls = 0;
+    
     release(&ptable.lock);
 
     // Allocate kernel stack.
@@ -220,7 +223,7 @@ int fork(void)
 // An exited process remains in the zombie state
 // until its parent calls wait() to find out it exited.
 
-__attribute__((noreturn)) void exit(int status){
+void exit(int status){
     struct proc *p;
     int fd;
     if(proc == initproc) {
@@ -237,7 +240,6 @@ __attribute__((noreturn)) void exit(int status){
 
     iput(proc->cwd);
     proc->cwd = 0;
-    proc->exit_status = status;
     acquire(&ptable.lock);
 
     // Parent might be sleeping in wait().
@@ -529,3 +531,51 @@ void procdump(void)
 }
 
 
+char*
+strcpy(char *s, char *t)
+{
+    char *os;
+    
+    os = s;
+    while((*s++ = *t++) != 0)
+        ;
+    return os;
+}
+
+
+void getprocs(struct uproc* procs)
+{   
+    static char *states[] = {
+            [UNUSED]    "unused",
+            [EMBRYO]    "embryo",
+            [SLEEPING]  "sleep ",
+            [RUNNABLE]  "runble",
+            [RUNNING]   "run   ",
+            [ZOMBIE]    "zombie"
+    };
+    char *state;
+    struct proc *p;
+
+    for(int i = 0; i < NPROC; i++){
+        p = ptable.proc + i;
+
+        if(p->state == UNUSED)
+            continue;
+
+        if(p->state >= 0 && p->state < NELEM(states) && states[p->state]) {
+            state = states[p->state];
+        } else {
+            state = "???";
+        }
+
+        procs[i] = (struct uproc){
+            .sz    = p->sz,
+            .pid   = p->pid,
+            .ppid  = p->parent->pid,
+            .num_syscalls = p->num_syscalls
+        };
+
+        strcpy(procs[i].state, state);
+        strcpy(procs[i].name, p->name);
+    }
+}

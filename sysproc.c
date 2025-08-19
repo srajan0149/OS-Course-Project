@@ -96,3 +96,9 @@ int sys_uptime(void)
 
     return xticks;
 }
+
+int sys_getprocs(void)
+{
+    getprocs((struct uproc *)proc->tf->r1);
+    return 0;
+}

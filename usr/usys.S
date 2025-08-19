@@ -14,7 +14,7 @@ name: \
 	bx lr;
 
 SYSCALL(fork)
-SYSCALL(_exit)
+SYSCALL(exit)
 SYSCALL(wait)
 SYSCALL(pipe)
 SYSCALL(read)
@@ -34,3 +34,4 @@ SYSCALL(getpid)
 SYSCALL(sbrk)
 SYSCALL(sleep)
 SYSCALL(uptime)
+SYSCALL(getprocs)

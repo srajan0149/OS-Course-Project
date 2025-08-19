@@ -1,11 +1,22 @@
+#include "types.h"
+
 struct stat;
+
+enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+
+// per-process state available for user programs
+struct uproc {
+    uint            sz;             // size of process memory (bytes)
+    char            state[6];          // process state
+    int             pid;            // process id
+    int             ppid;           // parent process pid
+    char            name[16];       // process name (debugging)
+    int     num_syscalls;
+};
 
 // system calls
 int fork(void);
-_Noreturn void _exit(int);
-static inline _Noreturn void exit(int status) {
-    _exit(status);
-}
+int exit(int) __attribute__((noreturn));
 int wait(void);
 int pipe(int*);
 int write(int, void*, int);
@@ -25,6 +36,8 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+
+int getprocs(struct uproc*);
 
 // ulib.c
 int stat(char*, struct stat*);

@@ -67,8 +67,19 @@ struct proc {
     struct file*    ofile[NOFILE];  // Open files
     struct inode*   cwd;            // Current directory
     char            name[16];       // Process name (debugging)
-    int             exit_status;
+    int             num_syscalls;
 };
+
+// per-process state available for user programs via sys_getprocs
+struct uproc {
+    uint    sz;             // size of process memory (bytes)
+    char    state[6];          // process state
+    int     pid;            // process id
+    int     ppid;           // parent process pid
+    char    name[16];       // process name (debugging)
+    int     num_syscalls;
+};
+
 
 // Process memory is laid out contiguously, low addresses first:
 //   text
