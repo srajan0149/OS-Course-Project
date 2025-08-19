@@ -1,0 +1,7 @@
+build/
+usr/_*
+**/*.asm
+**/*.sym
+**/*.o
+**/*.elf
+tools/mkfs

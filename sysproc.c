@@ -12,9 +12,11 @@ int sys_fork(void)
 }
 
 int sys_exit(void)
-{
-    exit();
-    return 0;  // not reached
+{   int n ;
+
+    argint(0, &n);   // fetch the first argument
+    exit(n);
+    return 0;        // never reached
 }
 
 int sys_wait(void)
