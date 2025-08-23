@@ -5,8 +5,8 @@
 #include "user.h"
 #include "fcntl.h"
 
-#include "fs.h"
-#include "stat.h"
+#include "fs.h" // provides access to the list of commands available without hardcoding them
+#include "stat.h" // provides file type definitions
 
 // Parsed command representation
 #define EXEC  1
@@ -137,14 +137,16 @@ void runcmd(struct cmd *cmd)
 char*
 fmtname(char *path)
 {
-    static char buf[DIRSIZ+1];
+    static char buf[DIRSIZ+1]; // this buffer is not the our global buf variable, but another static variable which 
+                               // locally stores the entire file path and pointer p points to the specific filename portion
+
     char *p;
     
-    // Find first character after last slash.
+    // Finding first character after last slash.
     for(p=path+strlen(path); p >= path && *p != '/'; p--)
-        ;
+            ;
     p++;
-    
+
     // Return blank-padded name.
     if(strlen(p) >= DIRSIZ)
         return p;
@@ -153,7 +155,7 @@ fmtname(char *path)
     return buf;
 }
 
-int match(const char *a, const char *b)
+int match(const char *a, const char *b) // This function checks if the typed text is prefix for a command.
 {
     int i = 0;
     while (a[i] && a[i] == b[i])
@@ -163,17 +165,18 @@ int match(const char *a, const char *b)
 
 int
 tab_complete(char *buffer,int i, char *path, int max)
-{
+{   // i --> the index being checked on in buf
+    // path --> the directory to be searched in, and is usually '.'
     // char *p;
     int fd;
     struct dirent de;
     struct stat st;
-    char matches[512];
+    char matches[512]; // Stores the list of commands for which match function returns true.
     char *m = matches;
     // int chars_printed = 0;
-    int match_count = 0;
+    int match_count = 0; // Maintains the count of number of commands that match the typed text, in order to implement the
+                         // function later on as asked according to match_count = 0 or 1 or >1.
     int dirname_len = 0;
-
     char *buf = buffer;
     char *last_space = buffer;  // pointer to last space
     while(*buf){
@@ -183,50 +186,48 @@ tab_complete(char *buffer,int i, char *path, int max)
     }
     buf = last_space;
 
-    if((fd = open(path, 0)) < 0){
+    if((fd = open(path, 0)) < 0){ // Open directory path, returns -1 if fails
         return -1;
     }
     
-    if(fstat(fd, &st) < 0){
+    if(fstat(fd, &st) < 0){ // Getting file status
         close(fd);
         return -1;
     }
     switch(st.type){
-        case T_FILE:
+        case T_FILE: // If the path is a file, simply reprint buffer.
             printf(1, "%s", buf);
             break;
             
-        case T_DIR:
-            if(strlen(path) + 1 + DIRSIZ + 1 > max){
+        case T_DIR: // If it is a directory, now search for entries.
+            if(strlen(path) + 1 + DIRSIZ + 1 > max){ // To avoid buffer overflow
                 printf(1, "very long directory name ('%s' of %d than '%s' of %d). Cannot autocomplete\n", path, strlen(path),buf, max);
                 break;
             }
 
-            // p = buf+max;
-            // *p++ = '/';
-            while(read(fd, &de, sizeof(de)) == sizeof(de)){
+            while(read(fd, &de, sizeof(de)) == sizeof(de)){ // Reading directory entries
                 if(de.inum == 0)
                     continue;
-                // memmove(p, de.name, DIRSIZ);
-                // p[DIRSIZ] = 0;
+
                 if(match(buf, de.name)){
                     dirname_len = strlen(de.name);
                     memmove(m, de.name, dirname_len);
                     memmove(m+dirname_len, " ", 1);
                     m += dirname_len + 1;
-                    // printf(1, "%s;%s\n",de.name, matches);
                     match_count += 1;
                 }
             }
             break;
     }
+
+    // Now implementing what is asked based on different cases for match_count
     *m = '\0';
     if(match_count == 1){
         memmove(buf, matches, strlen(matches));
         printf(1, "%s", buf+i);
-    }else if(match_count>1){
-    // printf(1, "match_count: %d; match: %s; buf: %s", match_count, matches, buf);
-    printf(1, "\n%s\n$ %s", matches, buf);
+    }
+    else if(match_count>1){
+        printf(1, "\n%s\n$ %s", matches, buf);
     }
     close(fd);
     return strlen(buffer);
@@ -240,18 +241,18 @@ getcmd(char *buf, int max)
 
     int i = 0, cc;
     char c;
-    // int tab_completed;
+
     while(i < max){
         cc = read(0, &c, 1);
         if(cc < 1)
             break;
         switch (c)
         {
-        case 0x9:
+        case 0x9: // Introduced a case to detect tab and act accordingly
             i = tab_complete(buf,i, ".", max);
             continue;
         
-        case 0x7f:        //Backspace
+        case 0x7f:        // Backspace
             if(i){
                 buf[--i] = '\0';
                 printf(1, "\b \b");
@@ -300,9 +301,7 @@ main(void)
     // Read and run input commands.
     while(getcmd(buf, sizeof(buf)) >= 0){
         if(buf[0] == 'c' && buf[1] == 'd' && buf[2] == ' '){
-            // Clumsy but will have to do for now.
             // Chdir has no effect on the parent if run in the child.
-            // buf[strlen(buf)-1] = 0;  // chop \n
             if(chdir(buf+3) < 0)
                 printf(2, "cannot cd %s\n", buf+3);
             continue;
