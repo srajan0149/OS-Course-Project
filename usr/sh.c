@@ -164,7 +164,7 @@ int match(const char *a, const char *b) // This function checks if the typed tex
 }
 
 int
-tab_complete(char *buf,int i, char *path, int max)
+tab_complete(char *buffer,int i, char *path, int max)
 {   // i --> the index being checked on in buf
     // path --> the directory to be searched in, and is usually '.'
     // char *p;
@@ -177,6 +177,15 @@ tab_complete(char *buf,int i, char *path, int max)
     int match_count = 0; // Maintains the count of number of commands that match the typed text, in order to implement the
                          // function later on as asked according to match_count = 0 or 1 or >1.
     int dirname_len = 0;
+    char *buf = buffer;
+    char *last_space = buffer;  // pointer to last space
+    while(*buf){
+        if(*buf == ' ')
+            last_space = buf;
+        buf++;
+    }
+    buf = last_space;
+
     if((fd = open(path, 0)) < 0){ // Open directory path, returns -1 if fails
         return -1;
     }
@@ -221,7 +230,7 @@ tab_complete(char *buf,int i, char *path, int max)
         printf(1, "\n%s\n$ %s", matches, buf);
     }
     close(fd);
-    return strlen(buf);
+    return strlen(buffer);
 }
 
 int
@@ -245,7 +254,7 @@ getcmd(char *buf, int max)
         
         case 0x7f:        // Backspace
             if(i){
-                i--;
+                buf[--i] = '\0';
                 printf(1, "\b \b");
             }
             continue;
