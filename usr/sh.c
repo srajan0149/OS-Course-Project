@@ -162,7 +162,7 @@ int match(const char *a, const char *b)
 }
 
 int
-tab_complete(char *buf,int i, char *path, int max)
+tab_complete(char *buffer,int i, char *path, int max)
 {
     // char *p;
     int fd;
@@ -173,6 +173,16 @@ tab_complete(char *buf,int i, char *path, int max)
     // int chars_printed = 0;
     int match_count = 0;
     int dirname_len = 0;
+
+    char *buf = buffer;
+    char *last_space = buffer;  // pointer to last space
+    while(*buf){
+        if(*buf == ' ')
+            last_space = buf;
+        buf++;
+    }
+    buf = last_space;
+
     if((fd = open(path, 0)) < 0){
         return -1;
     }
@@ -219,14 +229,8 @@ tab_complete(char *buf,int i, char *path, int max)
     printf(1, "\n%s\n$ %s", matches, buf);
     }
     close(fd);
-    return strlen(buf);
+    return strlen(buffer);
 }
-
-// char*
-// gets1(char *buf, int max)
-// {
-    
-// }
 
 int
 getcmd(char *buf, int max)
@@ -249,7 +253,7 @@ getcmd(char *buf, int max)
         
         case 0x7f:        //Backspace
             if(i){
-                i--;
+                buf[--i] = '\0';
                 printf(1, "\b \b");
             }
             continue;
