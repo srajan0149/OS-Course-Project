@@ -8,13 +8,15 @@ putc(int fd, char c)
     write(fd, &c, 1);
 }
 
-static void
+static int
 printint(int fd, int xx, int base, int sgn)
 {
     static char digits[] = "0123456789ABCDEF";
     char buf[16];
     int i, neg;
     uint x;
+
+    char chars_printed = 0;
     
     neg = 0;
     if(sgn && xx < 0){
@@ -31,17 +33,21 @@ printint(int fd, int xx, int base, int sgn)
     if(neg)
         buf[i++] = '-';
     
-    while(--i >= 0)
+    while(--i >= 0){
         putc(fd, buf[i]);
+        chars_printed++;
+    }
+    return chars_printed;
 }
 
 // Print to the given fd. Only understands %d, %x, %p, %s.
-void
+int
 printf(int fd, char *fmt, ...)
 {
     char *s;
     int c, i, state;
     uint *ap;
+    int chars_printed = 0;
     
     state = 0;
     ap = (uint*)(void*)&fmt + 1;
@@ -52,13 +58,14 @@ printf(int fd, char *fmt, ...)
                 state = '%';
             } else {
                 putc(fd, c);
+                chars_printed++;
             }
         } else if(state == '%'){
             if(c == 'd'){
-                printint(fd, *ap, 10, 1);
+                chars_printed += printint(fd, *ap, 10, 1);
                 ap++;
             } else if(c == 'x' || c == 'p'){
-                printint(fd, *ap, 16, 0);
+                chars_printed += printint(fd, *ap, 16, 0);
                 ap++;
             } else if(c == 's'){
                 s = (char*)*ap;
@@ -67,19 +74,25 @@ printf(int fd, char *fmt, ...)
                     s = "(null)";
                 while(*s != 0){
                     putc(fd, *s);
+                    chars_printed++;
                     s++;
                 }
             } else if(c == 'c'){
                 putc(fd, *ap);
+                chars_printed++;
                 ap++;
             } else if(c == '%'){
                 putc(fd, c);
+                chars_printed++;
             } else {
                 // Unknown % sequence.  Print it to draw attention.
                 putc(fd, '%');
+                chars_printed++;
                 putc(fd, c);
+                chars_printed++;
             }
             state = 0;
         }
     }
+    return chars_printed;
 }

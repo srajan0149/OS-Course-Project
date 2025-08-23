@@ -34,7 +34,9 @@ OBJS = \
 	\
 	device/picirq.o \
 	device/timer.o \
-	device/uart.o
+	device/uart.o\
+	\
+	termios.o
 
 KERN_OBJS = $(OBJS) entry.o
 kernel.elf: $(addprefix build/,$(KERN_OBJS)) kernel.ld build/initcode build/fs.img

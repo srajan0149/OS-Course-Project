@@ -5,6 +5,9 @@
 #include "user.h"
 #include "fcntl.h"
 
+#include "fs.h"
+#include "stat.h"
+
 // Parsed command representation
 #define EXEC  1
 #define REDIR 2
@@ -131,12 +134,146 @@ void runcmd(struct cmd *cmd)
     // return ;
 }
 
+char*
+fmtname(char *path)
+{
+    static char buf[DIRSIZ+1];
+    char *p;
+    
+    // Find first character after last slash.
+    for(p=path+strlen(path); p >= path && *p != '/'; p--)
+        ;
+    p++;
+    
+    // Return blank-padded name.
+    if(strlen(p) >= DIRSIZ)
+        return p;
+    memmove(buf, p, strlen(p));
+    memset(buf+strlen(p), ' ', DIRSIZ-strlen(p));
+    return buf;
+}
+
+int match(const char *a, const char *b)
+{
+    int i = 0;
+    while (a[i] && a[i] == b[i])
+        i++;
+    return a[i] == 0;   // true if all of 'a' consumed
+}
+
 int
-getcmd(char *buf, int nbuf)
+tab_complete(char *buf,int i, char *path, int max)
+{
+    // char *p;
+    int fd;
+    struct dirent de;
+    struct stat st;
+    char matches[512];
+    char *m = matches;
+    // int chars_printed = 0;
+    int match_count = 0;
+    int dirname_len = 0;
+    if((fd = open(path, 0)) < 0){
+        return -1;
+    }
+    
+    if(fstat(fd, &st) < 0){
+        close(fd);
+        return -1;
+    }
+    switch(st.type){
+        case T_FILE:
+            printf(1, "%s", buf);
+            break;
+            
+        case T_DIR:
+            if(strlen(path) + 1 + DIRSIZ + 1 > max){
+                printf(1, "very long directory name ('%s' of %d than '%s' of %d). Cannot autocomplete\n", path, strlen(path),buf, max);
+                break;
+            }
+
+            // p = buf+max;
+            // *p++ = '/';
+            while(read(fd, &de, sizeof(de)) == sizeof(de)){
+                if(de.inum == 0)
+                    continue;
+                // memmove(p, de.name, DIRSIZ);
+                // p[DIRSIZ] = 0;
+                if(match(buf, de.name)){
+                    dirname_len = strlen(de.name);
+                    memmove(m, de.name, dirname_len);
+                    memmove(m+dirname_len, " ", 1);
+                    m += dirname_len + 1;
+                    // printf(1, "%s;%s\n",de.name, matches);
+                    match_count += 1;
+                }
+            }
+            break;
+    }
+    *m = '\0';
+    if(match_count == 1){
+        memmove(buf, matches, strlen(matches));
+        printf(1, "%s", buf+i);
+    }else if(match_count>1){
+    // printf(1, "match_count: %d; match: %s; buf: %s", match_count, matches, buf);
+    printf(1, "\n%s\n$ %s", matches, buf);
+    }
+    close(fd);
+    return strlen(buf);
+}
+
+// char*
+// gets1(char *buf, int max)
+// {
+    
+// }
+
+int
+getcmd(char *buf, int max)
 {
     printf(2, "$ ");
-    memset(buf, 0, nbuf);
-    gets(buf, nbuf);
+    memset(buf, 0, max);
+
+    int i = 0, cc;
+    char c;
+    // int tab_completed;
+    while(i < max){
+        cc = read(0, &c, 1);
+        if(cc < 1)
+            break;
+        switch (c)
+        {
+        case 0x9:
+            i = tab_complete(buf,i, ".", max);
+            continue;
+        
+        case 0x7f:        //Backspace
+            if(i){
+                i--;
+                printf(1, "\b \b");
+            }
+            continue;
+        
+        // case 0x4427d:     //Up
+        // case 0x4427e:     //Down
+        // case 0x4427f:     //Left
+        // case 0x44280:     //Right
+        //     continue;
+        
+        case '\n':
+        case '\r':
+            printf(1, "\n");
+            goto exit_loop;
+
+        default:
+            buf[i++] = c;
+            printf(1, "%c", c);
+            break;
+        }
+    }
+    exit_loop:;
+    buf[i] = '\0';
+
     if(buf[0] == 0) // EOF
         return -1;
     return 0;
@@ -161,13 +298,14 @@ main(void)
         if(buf[0] == 'c' && buf[1] == 'd' && buf[2] == ' '){
             // Clumsy but will have to do for now.
             // Chdir has no effect on the parent if run in the child.
-            buf[strlen(buf)-1] = 0;  // chop \n
+            // buf[strlen(buf)-1] = 0;  // chop \n
             if(chdir(buf+3) < 0)
                 printf(2, "cannot cd %s\n", buf+3);
             continue;
         }
-        if(fork1() == 0)
+        if(fork1() == 0){
             runcmd(parsecmd(buf));
+        }
         wait();
     }
     exit(0);
