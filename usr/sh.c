@@ -233,6 +233,12 @@ tab_complete(char *buffer,int i, char *path, int max)
     return strlen(buffer);
 }
 
+void arrow_key_handler(void){
+    char c[2];
+    // Just read the additional two chars of Arrow key sequence;
+    read(0, c, 2);
+}
+
 int
 getcmd(char *buf, int max)
 {
@@ -259,11 +265,9 @@ getcmd(char *buf, int max)
             }
             continue;
         
-        // case 0x4427d:     //Up
-        // case 0x4427e:     //Down
-        // case 0x4427f:     //Left
-        // case 0x44280:     //Right
-        //     continue;
+        case '\x1b':
+          arrow_key_handler();
+          continue;
         
         case '\n':
         case '\r':

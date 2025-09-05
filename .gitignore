@@ -5,3 +5,4 @@ usr/_*
 **/*.o
 **/*.elf
 tools/mkfs
+.vscode
