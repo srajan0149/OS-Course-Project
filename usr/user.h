@@ -1,4 +1,5 @@
 #include "types.h"
+#include "pstat.h"
 
 struct stat;
 
@@ -38,6 +39,7 @@ int sleep(int);
 int uptime(void);
 
 int getprocs(struct uproc*);
+int getpinfo(struct pstat *);
 
 // ulib.c
 int stat(char*, struct stat*);

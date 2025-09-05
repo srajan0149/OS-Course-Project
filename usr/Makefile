@@ -25,6 +25,7 @@ UPROGS=\
 	_uptime\
 	_pause\
 	_ps\
+	_pinfo\
 
 
 all: $(FS_IMAGE)

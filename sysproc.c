@@ -67,6 +67,7 @@ int sys_sleep(void)
         return -1;
     }
 
+    proc->wake_at = ticks + n;
     acquire(&tickslock);
 
     ticks0 = ticks;
@@ -101,4 +102,8 @@ int sys_getprocs(void)
 {
     getprocs((struct uproc *)proc->tf->r1);
     return 0;
+}
+
+int sys_getpinfo(void){
+    return getpinfo((struct pstat *)proc->tf->r1);
 }

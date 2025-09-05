@@ -2,11 +2,12 @@
 #include "stat.h"
 #include "user.h"
 #include "param.h"
+
 int
 main(int argc, char *argv[])
 {
     int ticks = uptime();   
-    int seconds = ticks / HZ;  // 10 ticks = 1 second
+    int seconds = ticks / HZ;
     int minutes = seconds / 60;
     int hours = minutes / 60;
     int rem_minutes = minutes % 60;   
