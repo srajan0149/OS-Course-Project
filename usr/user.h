@@ -1,4 +1,5 @@
 #include "types.h"
+#include "pstat.h"
 
 struct stat;
 
@@ -38,6 +39,11 @@ int sleep(int);
 int uptime(void);
 
 int getprocs(struct uproc*);
+int settickets(int pid, int n_tickets);
+void srand(uint seed);
+int getpinfo(struct pstat*);
+int yield(void);
+int killed(void);
 
 // ulib.c
 int stat(char*, struct stat*);

@@ -7,6 +7,13 @@
 #include "proc.h"
 #include "spinlock.h"
 
+uint rseed = 1;  // default seed for RNG
+static uint rand(void) {
+  // linear congruential generator (LCG)
+  rseed = rseed * 1664525 + 1013904223;
+  return rseed;
+}
+
 //
 // Process initialization:
 // process initialize is somewhat tricky.
@@ -68,6 +75,9 @@ static struct proc* allocproc(void)
     found:
     p->state = EMBRYO;
     p->pid = nextpid++;
+    p->tickets = 1;   // default one ticket
+    p->runticks = 0;
+    p->boostsleft = 0;
 
     p->num_syscalls = 0;
     
@@ -330,23 +340,35 @@ void scheduler(void)
         // Loop over process table looking for process to run.
         acquire(&ptable.lock);
 
+        int total_tickets = 0;
         for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-            if(p->state != RUNNABLE) {
-                continue;
+            if(p->state == RUNNABLE) {
+                total_tickets += p->tickets;
             }
+        }
+        
+        if(total_tickets > 0){
+            // 2. pick a winning ticket
+            int winner = (rand() % total_tickets) + 1;
 
-            // Switch to chosen process.  It is the process's job
-            // to release ptable.lock and then reacquire it
-            // before jumping back to us.
-            proc = p;
-            switchuvm(p);
+            // 3. find the winning process
+            int count = 0;
+            for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+                if(p->state != RUNNABLE)
+                    continue;
+                count += p->tickets;
+                if(count >= winner){
+                    // 4. run the winner
+                    proc = p;
+                    switchuvm(p);
+                    p->state = RUNNING;
 
-            p->state = RUNNING;
+                    swtch(&cpu->scheduler, proc->context);
 
-            swtch(&cpu->scheduler, proc->context);
-            // Process is done running for now.
-            // It should have changed its p->state before coming back.
-            proc = 0;
+                    proc = 0;
+                    break;
+                }
+            }
         }
 
         release(&ptable.lock);

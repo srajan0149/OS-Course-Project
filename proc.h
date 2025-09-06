@@ -68,6 +68,9 @@ struct proc {
     struct inode*   cwd;            // Current directory
     char            name[16];       // Process name (debugging)
     int             num_syscalls;
+    int             tickets;        // Number of tickets this process has
+    int             runticks;       // Number of ticks process has run
+    int             boostsleft;     // Number of ticks left for boost (if needed)
 };
 
 // per-process state available for user programs via sys_getprocs

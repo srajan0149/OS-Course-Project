@@ -19,6 +19,9 @@ void irq_handler (struct trapframe *r)
     // running scheduler, proc is NULL.
     if (proc != NULL) {
         proc->tf = r;
+        if (proc->state==RUNNING){
+            proc->runticks++;
+        }
     }
 
     pic_dispatch (r);
