@@ -14,7 +14,9 @@
 #define MAXARG       32  // max exec arguments
 #define LOGSIZE      10  // max data sectors in on-disk log
 
-#define HZ           10
+#define HZ           10000  // tick frequency
+#define TIME_QUANT   10  // number of ticks to scheduler for
 
+#define MAX_BOOSTS   100
 #define N_CALLSTK    15
 #endif

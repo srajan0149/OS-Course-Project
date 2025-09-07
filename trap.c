@@ -25,6 +25,14 @@ void irq_handler (struct trapframe *r)
     }
 
     pic_dispatch (r);
+
+    // preempt on timer-quantum boundary, only when returning to user mode
+    if (proc &&
+        proc->state == RUNNING &&
+        (r->spsr & 0x1f) == USR_MODE &&
+        proc->runticks % TIME_QUANT == 0) {
+        yield();  // safe here: ptable.lock acquired inside, ncli==1 invariant satisfied
+    }
 }
 
 // trap routine

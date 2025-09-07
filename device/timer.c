@@ -6,6 +6,7 @@
 #include "defs.h"
 #include "memlayout.h"
 #include "spinlock.h"
+#include "proc.h"
 
 // A SP804 has two timers, we only use the first one, and as perodic timer
 

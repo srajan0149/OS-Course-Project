@@ -358,6 +358,7 @@ struct proc *hold_lottery(int total_tickets){
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
+uint last_tick = 0;
 void scheduler(void)
 {
     struct proc *p;
@@ -366,13 +367,18 @@ void scheduler(void)
         // Enable interrupts on this processor.
         sti();
 
+        if(!(ticks != last_tick && ticks % TIME_QUANT == 0)) 
+            continue;
+        
+        last_tick = ticks;
+
         // Loop over process table looking for process to run.
         acquire(&ptable.lock);
 
         int total_tickets = 0;
         for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
             if(p->state == SLEEPING) {
-                p->boostsleft++;
+                if(p->boostsleft < MAX_BOOSTS)  p->boostsleft++;
                 continue;
             }
             if(p->state != RUNNABLE) {
@@ -394,7 +400,6 @@ void scheduler(void)
             switchuvm(p);
 
             p->state = RUNNING;
-            p->runticks++;
             swtch(&cpu->scheduler, proc->context);
             // Process is done running for now.
             // It should have changed its p->state before coming back.
