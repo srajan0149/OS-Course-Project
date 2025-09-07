@@ -23,6 +23,7 @@ struct trapframe;
 
 
 struct uproc;
+struct pstat;
 
 typedef uint32	pte_t;
 typedef uint32  pde_t;
@@ -128,6 +129,7 @@ int             pipewrite(struct pipe*, char*, int);
 struct proc*    copyproc(struct proc*);
 void            exit(int);
 int             fork(void);
+int             getpinfo(struct pstat*);
 void            getprocs(struct uproc*);
 int             growproc(int);
 int             kill(int);
@@ -135,7 +137,9 @@ void            pinit(void);
 void            procdump(void);
 void            scheduler(void) __attribute__((noreturn));
 void            sched(void);
+int             settickets(int, int);
 void            sleep(void*, struct spinlock*);
+void            srand(uint);
 void            userinit(void);
 int             wait(void);
 void            wakeup(void*);

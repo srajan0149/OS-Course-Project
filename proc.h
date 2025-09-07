@@ -67,10 +67,11 @@ struct proc {
     struct file*    ofile[NOFILE];  // Open files
     struct inode*   cwd;            // Current directory
     char            name[16];       // Process name (debugging)
-    int             num_syscalls;
-    int             tickets;        // Number of tickets this process has
-    int             runticks;       // Number of ticks process has run
-    int             boostsleft;     // Number of ticks left for boost (if needed)
+    int             num_syscalls;   // Number of syscalls made by process
+    int             tickets;        // how many tickets does this process have?
+    int             runticks;       // total number of timer ticks this process has been scheduled
+    int             boostsleft;     // how many more ticks will this process be boosted?
+    int             wake_at;
 };
 
 // per-process state available for user programs via sys_getprocs

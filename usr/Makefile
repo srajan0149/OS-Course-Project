@@ -25,7 +25,7 @@ UPROGS=\
 	_uptime\
 	_pause\
 	_ps\
-	_lotterytest\
+	_pinfo\
 
 
 all: $(FS_IMAGE)

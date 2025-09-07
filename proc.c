@@ -6,14 +6,19 @@
 #include "arm.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "pstat.h"
 
-uint rseed = 1;  // default seed for RNG
-static uint rand(void) {
-  // linear congruential generator (LCG)
-  rseed = rseed * 1664525 + 1013904223;
-  return rseed;
+
+#define RAND_MAX 0x7fffffff
+uint rseed = 0;
+
+uint rand() {
+    return rseed = (rseed * 1103515245 + 12345) & RAND_MAX;
 }
 
+void srand(uint seed){
+    rseed = seed;
+}
 //
 // Process initialization:
 // process initialize is somewhat tricky.
@@ -80,7 +85,11 @@ static struct proc* allocproc(void)
     p->boostsleft = 0;
 
     p->num_syscalls = 0;
-    
+    p->runticks     = 0;
+    p->tickets      = (p->parent->tickets < 1)? 1: p->parent->tickets;
+    p->boostsleft   = 0;
+    p->wake_at      = 0;   // 0 if process is not sleeping on ticks
+
     release(&ptable.lock);
 
     // Allocate kernel stack.
@@ -321,6 +330,26 @@ int wait(void)
     }
 }
 
+struct proc *hold_lottery(int total_tickets){
+    if (total_tickets <= 0) {
+        cprintf("this function should only be called when at least 1 process is RUNNABLE");
+        return 0;
+    }
+
+    struct proc *p;
+    uint winner_lottery = rand() % total_tickets;
+    uint max_ticket_num = 0;
+
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(p->state == RUNNABLE){
+            max_ticket_num += p->tickets * (p->boostsleft?2:1);
+            if(max_ticket_num-1 >= winner_lottery) return p;
+        }
+    }
+
+    panic("I am unable to compile without this line, but this is never executed");
+}
+
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
@@ -342,35 +371,35 @@ void scheduler(void)
 
         int total_tickets = 0;
         for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-            if(p->state == RUNNABLE) {
-                total_tickets += p->tickets;
+            if(p->state == SLEEPING) {
+                p->boostsleft++;
+                continue;
             }
-        }
-        
-        if(total_tickets > 0){
-            // 2. pick a winning ticket
-            int winner = (rand() % total_tickets) + 1;
-
-            // 3. find the winning process
-            int count = 0;
-            for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-                if(p->state != RUNNABLE)
-                    continue;
-                count += p->tickets;
-                if(count >= winner){
-                    // 4. run the winner
-                    proc = p;
-                    switchuvm(p);
-                    p->state = RUNNING;
-
-                    swtch(&cpu->scheduler, proc->context);
-
-                    proc = 0;
-                    break;
-                }
+            if(p->state != RUNNABLE) {
+                continue;
             }
+            // only runnable processes will participate in the lottery
+            // double the number of tickets if boostsleft is non-zero
+            total_tickets += p->tickets * (p->boostsleft?2:1);
         }
+        if(total_tickets>0){
+            p = hold_lottery(total_tickets);
+            if(p->boostsleft) p->boostsleft--;
 
+            // Switch to chosen process.  It is the process's job
+            // to release ptable.lock and then reacquire it
+            // before jumping back to us.
+            proc = p;
+            
+            switchuvm(p);
+
+            p->state = RUNNING;
+            p->runticks++;
+            swtch(&cpu->scheduler, proc->context);
+            // Process is done running for now.
+            // It should have changed its p->state before coming back.
+            proc = 0;
+        }
         release(&ptable.lock);
     }
 }
@@ -478,8 +507,9 @@ static void wakeup1(void *chan)
     struct proc *p;
 
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-        if(p->state == SLEEPING && p->chan == chan) {
+        if(p->state == SLEEPING && p->chan == chan && p->wake_at <= ticks) {
             p->state = RUNNABLE;
+            p->wake_at = 0;     // reset wake_at
         }
     }
 }
@@ -600,4 +630,33 @@ void getprocs(struct uproc* procs)
         strcpy(procs[i].state, state);
         strcpy(procs[i].name, p->name);
     }
+}
+
+
+int settickets(int pid, int n_tickets){
+    struct proc *p;
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(p->pid == pid){
+            p->tickets = n_tickets;
+            return 0;
+        }
+    }
+    return -1;
+}
+
+
+int getpinfo(struct pstat *pstat){
+    struct proc *p;
+    int i;
+    for(p = ptable.proc, i = 0; p < &ptable.proc[NPROC] && i < NPROC; p++, i++){
+        if(p->state == UNUSED) continue;
+        pstat->inuse[i] = 1;
+        pstat->pid[i] = p->pid;
+        pstat->boostsleft[i] = p->boostsleft;
+        pstat->runticks[i] = p->runticks;
+        pstat->tickets[i] = p->tickets;
+
+        strcpy(pstat->name[i], p->name);
+    }
+    return 0;
 }
