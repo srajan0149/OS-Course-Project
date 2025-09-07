@@ -117,31 +117,36 @@ extern int sys_uptime(void);
 
 extern int sys_getprocs(void);
 extern int sys_getpinfo(void);
+extern int sys_settickets(void);
+extern int sys_srand(void);
+
 
 static int (*syscalls[])(void) = {
-        [SYS_fork]    sys_fork,
-        [SYS_exit]    sys_exit,
-        [SYS_wait]    sys_wait,
-        [SYS_pipe]    sys_pipe,
-        [SYS_read]    sys_read,
-        [SYS_kill]    sys_kill,
-        [SYS_exec]    sys_exec,
-        [SYS_fstat]   sys_fstat,
-        [SYS_chdir]   sys_chdir,
-        [SYS_dup]     sys_dup,
-        [SYS_getpid]  sys_getpid,
-        [SYS_sbrk]    sys_sbrk,
-        [SYS_sleep]   sys_sleep,
-        [SYS_uptime]  sys_uptime,
-        [SYS_open]    sys_open,
-        [SYS_write]   sys_write,
-        [SYS_mknod]   sys_mknod,
-        [SYS_unlink]  sys_unlink,
-        [SYS_link]    sys_link,
-        [SYS_mkdir]   sys_mkdir,
-        [SYS_close]   sys_close,
-        [SYS_getprocs]sys_getprocs,
-        [SYS_getpinfo]sys_getpinfo
+        [SYS_fork]      sys_fork,
+        [SYS_exit]      sys_exit,
+        [SYS_wait]      sys_wait,
+        [SYS_pipe]      sys_pipe,
+        [SYS_read]      sys_read,
+        [SYS_kill]      sys_kill,
+        [SYS_exec]      sys_exec,
+        [SYS_fstat]     sys_fstat,
+        [SYS_chdir]     sys_chdir,
+        [SYS_dup]       sys_dup,
+        [SYS_getpid]    sys_getpid,
+        [SYS_sbrk]      sys_sbrk,
+        [SYS_sleep]     sys_sleep,
+        [SYS_uptime]    sys_uptime,
+        [SYS_open]      sys_open,
+        [SYS_write]     sys_write,
+        [SYS_mknod]     sys_mknod,
+        [SYS_unlink]    sys_unlink,
+        [SYS_link]      sys_link,
+        [SYS_mkdir]     sys_mkdir,
+        [SYS_close]     sys_close,
+        [SYS_getprocs]  sys_getprocs,
+        [SYS_getpinfo]  sys_getpinfo,
+        [SYS_settickets]sys_settickets,
+        [SYS_srand]     sys_srand
 };
 
 void syscall(void)

@@ -85,6 +85,7 @@ static struct proc* allocproc(void)
     p->runticks     = 0;
     p->tickets      = (p->parent->tickets < 1)? 1: p->parent->tickets;
     p->boostsleft   = 0;
+    p->wake_at      = 0;   // 0 if process is not sleeping on ticks
 
     release(&ptable.lock);
 
@@ -503,11 +504,9 @@ static void wakeup1(void *chan)
     struct proc *p;
 
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-        if(p->state == SLEEPING) {
-            if (p->wake_at <= ticks && p->chan == chan){
-                continue;
-            }
+        if(p->state == SLEEPING && p->chan == chan && p->wake_at <= ticks) {
             p->state = RUNNABLE;
+            p->wake_at = 0;     // reset wake_at
         }
     }
 }

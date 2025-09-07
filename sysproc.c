@@ -107,3 +107,12 @@ int sys_getprocs(void)
 int sys_getpinfo(void){
     return getpinfo((struct pstat *)proc->tf->r1);
 }
+
+int sys_settickets(void){
+    return settickets((int) proc->tf->r1, (int) proc->tf->r2);
+}
+
+int sys_srand(void){
+    srand((uint) proc->tf->r1);
+    return 0;
+}
