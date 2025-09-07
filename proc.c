@@ -358,7 +358,6 @@ struct proc *hold_lottery(int total_tickets){
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
-uint last_tick = 0;
 void scheduler(void)
 {
     struct proc *p;
@@ -366,11 +365,6 @@ void scheduler(void)
     for(;;){
         // Enable interrupts on this processor.
         sti();
-
-        if(!(ticks != last_tick && ticks % TIME_QUANT == 0)) 
-            continue;
-        
-        last_tick = ticks;
 
         // Loop over process table looking for process to run.
         acquire(&ptable.lock);
