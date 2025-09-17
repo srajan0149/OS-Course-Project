@@ -147,6 +147,12 @@ static int mappages (pde_t *pgdir, void *va, uint size, uint pa, int ap)
     return 0;
 }
 
+int
+map_page(pde_t *pgdir, void *va, uint pa, int ap)
+{
+    return mappages(pgdir, va, PTE_SZ, pa, ap);
+}
+
 // flush all TLB
 static void flush_tlb (void)
 {
@@ -235,23 +241,17 @@ int allocuvm (pde_t *pgdir, uint oldsz, uint newsz)
         return 0;
     }
 
-    if (newsz < oldsz) {
-        return oldsz;
-    }
-
     a = align_up(oldsz, PTE_SZ);
 
     for (; a < newsz; a += PTE_SZ) {
         mem = alloc_page();
 
         if (mem == 0) {
-            cprintf("allocuvm out of memory\n");
-            deallocuvm(pgdir, newsz, oldsz);
             return 0;
         }
 
         memset(mem, 0, PTE_SZ);
-        mappages(pgdir, (char*) a, PTE_SZ, v2p(mem), AP_KU);
+        if (mappages(pgdir, (char*) a, PTE_SZ, v2p(mem), AP_KU) < 0) {return 0;}
     }
 
     return newsz;
