@@ -82,7 +82,7 @@ void print_pte_entry(uint va, uint pte)
   uint perms = PTE_AP(pte);    // extract permission bits
   uint type  = (pte & PE_TYPES);
 
-  printf(1, "va 0x%08x pte 0x%08x pa 0x%08x perms 0x%x type 0x%x\n",
+  printf(1, "va 0x%x pte 0x%x pa 0x%x perms 0x%x type 0x%x\n",
          va, pte, pa, perms, type);
 }
 

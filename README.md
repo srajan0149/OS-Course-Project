@@ -109,7 +109,7 @@ This is your final integration test summary.
 
 ## Screenshot of image
 
-![1758132747742](screenshot.png)
+![1758132747742](screen1.png)
 
 ---
 
