@@ -61,6 +61,8 @@ int exec (char *path, char **argv)
             goto bad;
         }
 
+        if (ph.vaddr > sz) sz = ph.vaddr;
+
         if ((sz = allocuvm(pgdir, sz, ph.vaddr + ph.memsz)) == 0) {
             goto bad;
         }

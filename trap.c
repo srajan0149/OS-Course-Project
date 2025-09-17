@@ -4,6 +4,8 @@
 #include "param.h"
 #include "arm.h"
 #include "proc.h"
+#include "mmu.h"
+#include "memlayout.h"
 
 // trap routine
 void swi_handler (struct trapframe *r)
@@ -61,11 +63,37 @@ void dabort_handler (struct trapframe *r)
 
     // read the fault address register
     asm("MRC p15, 0, %[r], c6, c0, 0": [r]"=r" (fa)::);
-    
-    cprintf ("data abort: instruction 0x%x, fault addr 0x%x, reason 0x%x \n",
+
+    if (fa < UADDR_SZ && proc) {
+        // align to page boundary
+        uint a = align_dn(fa, PTE_SZ);
+
+        // allocate one page
+        char *mem = alloc_page();
+        if (!mem) {
+            cprintf("demand paging: out of memory\n");
+            // you can choose to kill process here
+            goto bad;
+        }
+
+        memset(mem, 0, PTE_SZ);
+
+        // map it into the page table
+        if (map_page(proc->pgdir, (void*)a, v2p(mem), AP_KU) < 0) {
+            cprintf("demand paging: mappages failed\n");
+            goto bad;
+        }
+
+        cprintf("Demand-paged: mapped new page for 0x%x\n", a);
+        return;
+    }
+
+bad:
+    // optionally kill process or panic
+    cprintf("data abort: instruction 0x%x, fault addr 0x%x, reason 0x%x\n",
              r->pc, fa, dfs);
-    
-    dump_trapframe (r);
+
+    dump_trapframe(r);
 }
 
 // trap routine
