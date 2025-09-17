@@ -57,3 +57,5 @@ int atoi(const char*);
 
 //assignment 03:
 int pgpte(void *va); // returns the PTE for the given virtual address
+int ugetpid(void);
+int kpt(void);

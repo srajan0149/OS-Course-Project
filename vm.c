@@ -433,6 +433,67 @@ int copyout (pde_t *pgdir, uint va, void *p, uint len)
     return 0;
 }
 
+static void
+print_pte_entry(uint va, pte_t pte)
+{
+  uint pa = PT_ADDR(pte);         // extract physical page base
+  uint flags = pte & 0xFFF;      // lower bits are flags; adjust mask if yours differs
+
+  cprintf("kva 0x%08x pte 0x%08x pa 0x%08x flags 0x%x [",
+          va, (uint)pte, pa, flags);
+  if (pte & PTE_P) cprintf(" P");
+  if (pte & PTE_W) cprintf(" W");
+  if (pte & PTE_U) cprintf(" U");
+  /* ARM-specific flags — adapt if not defined in your mmu.h */
+  cprintf(" AP=0x%x", (pte & PTE_AP(pte)) >> 1); // just an example if AP occupies bits
+
+  cprintf(" ]\n");
+}
+
+/*
+ * Print kernel page table entries in the kernel virtual address range.
+ * We iterate over virtual addresses starting from KERNBASE up to KERNBASE + range.
+ * range_pages controls how many pages we scan (default here: 4096 pages = 16MB).
+ */
+void
+kpt_print(void)
+{
+  struct proc *p = proc;
+  if (!p || !p->pgdir) {
+    cprintf("kpt_print: no pgdir for current process\n");
+    return;
+  }
+
+  pde_t *pgdir = p->pgdir;
+  uint num_pages = UADDR_SZ / PTE_SZ;   // total user pages
+  uint pages_to_show = 10;
+
+  cprintf("kpt_print: pid=%d name=%s\n", p->pid, p->name);
+
+  // --- First 10 pages ---
+  for (uint i = 0; i < pages_to_show; i++) {
+    uint va = i * PTE_SZ;
+    pte_t *pte = walkpgdir(pgdir, (char*)va, 0);
+    if (!pte || !(*pte)) {
+      cprintf("va 0x%08x unmapped\n", va);
+    } else {
+      print_pte_entry(va, *pte);
+    }
+  }
+
+  // --- Last 10 pages ---
+  for (uint i = num_pages - pages_to_show; i < num_pages; i++) {
+    uint va = i * PTE_SZ;
+    pte_t *pte = walkpgdir(pgdir, (char*)va, 0);
+    if (!pte || !(*pte)) {
+      cprintf("va 0x%08x unmapped\n", va);
+    } else {
+      print_pte_entry(va, *pte);
+    }
+  }
+
+  cprintf("kpt_print: done\n");
+}
 
 // 1:1 map the memory [phy_low, phy_hi] in kernel. We need to
 // use 2-level mapping for this block of memory. The rumor has
@@ -442,6 +503,8 @@ int copyout (pde_t *pgdir, uint va, void *p, uint len)
 // mapped as 4KB pages
 void paging_init (uint phy_low, uint phy_hi)
 {
+
     mappages (P2V(&_kernel_pgtbl), P2V(phy_low), phy_hi - phy_low, phy_low, AP_KU);
+    kpgdir = (pde_t*)P2V(&_kernel_pgtbl);
     flush_tlb ();
 }

@@ -13,6 +13,11 @@ int sys_fork(void)
 {
     return fork();
 }
+int
+sys_ugetpid(void)
+{
+  return proc->pid;
+}
 
 int sys_exit(void)
 {   int n ;
@@ -137,4 +142,13 @@ int sys_pgpte(void)
     return 0;
 
   return *pte;  // Return the PTE value directly
+}
+
+extern void kpt_print(void);  // forward
+
+int
+sys_kpt(void)
+{
+  kpt_print();
+  return 0;
 }

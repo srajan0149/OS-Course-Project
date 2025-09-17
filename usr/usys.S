@@ -40,3 +40,5 @@ SYSCALL(settickets)
 SYSCALL(srand)
 
 SYSCALL(pgpte)
+SYSCALL(ugetpid)
+SYSCALL(kpt)

@@ -122,7 +122,8 @@ extern int sys_getpinfo(void);
 extern int sys_settickets(void);
 extern int sys_srand(void);
 extern int sys_pgpte(void); // assignment 03
-
+extern int sys_ugetpid(void); // assignment 01
+extern int sys_kpt(void);
 
 static int (*syscalls[])(void) = {
         [SYS_fork]      sys_fork,
@@ -151,6 +152,8 @@ static int (*syscalls[])(void) = {
         [SYS_settickets]sys_settickets,
         [SYS_srand]     sys_srand,
         [SYS_pgpte]     sys_pgpte, // assignment 03
+        [SYS_ugetpid]   sys_ugetpid,
+        [SYS_kpt]       sys_kpt,
 };
 
 void syscall(void)

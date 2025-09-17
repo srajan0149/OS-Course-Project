@@ -60,4 +60,24 @@
 #define PT_ADDR(v)  align_dn(v, PT_SZ)              // physical address of the PT
 #define PT_ORDER    10
 
+
+// xv6-like page table flags for compatibility
+#define PTE_P   (1 << 0)   // Present (always 1 for valid PTE)
+#define PTE_W   (1 << 1)   // Writable (RW for user/kernel)
+#define PTE_U   (1 << 2)   // User accessible
+#define PTE_AP(pte) (((pte) >> 4) & 0x03)
+
+// Map them to ARM MMU AP bits
+// ARM uses AP[1:0] to define permissions
+// We'll follow this mapping:
+//   PTE_P -> entry valid (use PTE_TYPE)
+//   PTE_W -> AP_KU (kernel/user read+write)
+//   PTE_U -> user access allowed (not KO)
+#define ARM_PTE_P   PTE_TYPE
+#define ARM_PTE_W   (AP_KU << 4)   // full RW access
+#define ARM_PTE_U   (AP_KUR << 4)  // user read, no write
+
+// Combined convenience macros
+#define PTE_FLAGS   0xFFF   // mask lower bits like x86 did
+
 #endif

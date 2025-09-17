@@ -29,3 +29,5 @@
 #define SYS_srand       25
 
 #define SYS_pgpte       26
+#define SYS_ugetpid     27
+#define SYS_kpt         28
