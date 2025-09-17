@@ -26,6 +26,7 @@ UPROGS=\
 	_pause\
 	_ps\
 	_pinfo\
+	_test\
 
 
 all: $(FS_IMAGE)
