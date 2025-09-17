@@ -1,10 +1,11 @@
+
 # xv6-ARM Page Table Inspection
 
 ## Overview
 This project extends **xv6 for ARM** with new functionality to **inspect page tables** from user space.  
 We add a syscall `pgpte()` that allows a user program to query the **page table entry (PTE)** corresponding to a given virtual address.
 
-A test program `pttest` is provided to validate the implementation:
+A test program `test` is provided to validate the implementation:
 - Print page table mappings for selected addresses (`print_pt`)
 - Test a user-space syscall (`ugetpid_test`)
 - Print kernel page table layout (`print_kpt`) [stubbed]
@@ -22,23 +23,23 @@ A test program `pttest` is provided to validate the implementation:
 * **Kernel Implementation (`sysproc.c`):**
 
   ```c
-  int
-  sys_pgpte(void)
-  {
-    int va;
-    if (argint(0, &va) < 0)
-      return -1;
+    int 
+    sys_pgpte(void)
+    {
+    uint addr;
+    if (argint(0, (int*)&addr) < 0)  // Use argint instead of argaddr for ARM
+        return -1;
 
     struct proc *p = proc;
-    if (!p)
-      return 0;
+    if (p == 0)
+        return 0;
 
-    pte_t *pte = walk(p->pagetable, (uint)va, 0); // no allocation
+    pte_t *pte = walkpgdir(p->pgdir, (void*)addr, 0); // Use walkpgdir from vm.c
     if (pte == 0)
-      return 0;
+        return 0;
 
-    return (int)(*pte);
-  }
+    return *pte;  // Return the PTE value directly
+    }
   ```
 * **Syscall Wiring:**
 
@@ -48,7 +49,7 @@ A test program `pttest` is provided to validate the implementation:
 
 ---
 
-### Test Program (`pttest.c`)
+### Test Program (`test.c`)
 
 1. **`print_pt`**
 
@@ -95,7 +96,7 @@ superpg_test starting
 Testing superpage at va 0x200000
 First page at va 0x200000: PTE 0x7DEA03E (phys 0x7DEA000)
 Non-contiguous pages: va 0x213000, expected pa 0x7DFD000, got pa 0x7DBD000
-pttest: superpg_test failed: pte different, pid=3
+test: superpg_test failed: pte different, pid=3
 ```
 
 ---
@@ -125,12 +126,12 @@ pttest: superpg_test failed: pte different, pid=3
 
 1. Clone xv6-ARM repository.
 2. Apply syscall modifications (`sys_pgpte` and syscall wiring).
-3. Place `pttest.c` in `user/`.
+3. Place `test.c` in `user/`.
 4. Rebuild:
 
    ```bash
    make clean
-   make
+   
    ```
 5. Boot xv6 in QEMU:
 
@@ -153,7 +154,7 @@ This project demonstrates how to:
 * Inspect user-level page tables from user space.
 * Validate mapping correctness with targeted tests.
 
-`pttest` verifies basic functionality successfully, but highlights the limitations of xv6’s page allocator regarding superpage support.
+`test` verifies basic functionality successfully, but highlights the limitations of xv6’s page allocator regarding superpage support.
 
 
 ---
