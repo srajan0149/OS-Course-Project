@@ -93,7 +93,7 @@ void supercheck(uint s)
     int pte = pgpte((void *)p);
     if (pte == 0)
     {
-      printf(1, "Null PTE at va 0x%x\n", pf);
+      printf(1, "Null PTE at va 0x%x\n", p);
       err("no pte");
     }
 
