@@ -27,6 +27,7 @@ UPROGS=\
 	_ps\
 	_pinfo\
 	_test\
+	_ondemand_test
 
 
 all: $(FS_IMAGE)
