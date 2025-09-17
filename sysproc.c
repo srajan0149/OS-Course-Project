@@ -8,6 +8,7 @@
 #include "pstat.h"
 #include "spinlock.h"
 
+
 int sys_fork(void)
 {
     return fork();
@@ -117,4 +118,23 @@ int sys_settickets(void){
 int sys_srand(void){
     srand((uint) proc->tf->r1);
     return 0;
+}
+
+
+// assignment 03:
+int sys_pgpte(void)
+{
+  uint addr;
+  if (argint(0, (int*)&addr) < 0)  // Use argint instead of argaddr for ARM
+    return -1;
+
+  struct proc *p = proc;
+  if (p == 0)
+    return 0;
+
+  pte_t *pte = walkpgdir(p->pgdir, (void*)addr, 0); // Use walkpgdir from vm.c
+  if (pte == 0)
+    return 0;
+
+  return *pte;  // Return the PTE value directly
 }

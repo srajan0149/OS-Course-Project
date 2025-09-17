@@ -121,6 +121,7 @@ extern int sys_getprocs(void);
 extern int sys_getpinfo(void);
 extern int sys_settickets(void);
 extern int sys_srand(void);
+extern int sys_pgpte(void); // assignment 03
 
 
 static int (*syscalls[])(void) = {
@@ -148,7 +149,8 @@ static int (*syscalls[])(void) = {
         [SYS_getprocs]  sys_getprocs,
         [SYS_getpinfo]  sys_getpinfo,
         [SYS_settickets]sys_settickets,
-        [SYS_srand]     sys_srand
+        [SYS_srand]     sys_srand,
+        [SYS_pgpte]     sys_pgpte, // assignment 03
 };
 
 void syscall(void)

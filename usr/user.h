@@ -54,3 +54,6 @@ void* memset(void*, int, uint);
 void* malloc(uint);
 void free(void*);
 int atoi(const char*);
+
+//assignment 03:
+int pgpte(void *va); // returns the PTE for the given virtual address

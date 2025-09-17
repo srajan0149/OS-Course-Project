@@ -1,91 +1,161 @@
-# xv6-pi5 Documentation
+
+# xv6-ARM Page Table Inspection
 
 ## Overview
-xv6-pi5 is a port of the MIT xv6 teaching operating system to the ARM architecture, with a focus on compatibility with the Raspberry Pi 5 platform. It provides a minimal Unix-like kernel, shell, file system, and basic user programs, serving as a hands-on resource for learning operating system fundamentals on ARM hardware.
+This project extends **xv6 for ARM** with new functionality to **inspect page tables** from user space.  
+We add a syscall `pgpte()` that allows a user program to query the **page table entry (PTE)** corresponding to a given virtual address.
 
-## Repository Structure
-| Path/Directory | Purpose |
-|----------------|---------|
-| `arm.c`, `arm.h` | ARM CPU initialization, context switching, MMU setup |
-| `asm.S` | Assembly routines for low-level CPU and trap handling |
-| `entry.S` | Kernel entry point and bootstrap code |
-| `swtch.S` | Context switch (process switching) assembly routine |
-| `trap_asm.S` | Trap and interrupt entry assembly |
-| `mmu.h` | ARM MMU and paging definitions |
-| `kernel.ld` | Linker script for ARM memory layout |
-| `initcode.S` | Minimal user-mode program for system initialization |
-| `device/` | Device drivers (UART, timer, interrupt controller, etc.) |
-| `console.c` | Console (UART) driver and kernel I/O |
-| `main.c`, `start.c` | Kernel initialization and main loop |
-| `Makefile` | Build system configuration for ARM toolchain |
-| `usr/` | User programs (e.g., sh, ls, cat, etc.) |
-| `tools/` | Build utilities (e.g., mkfs for file system creation) |
-| Other `.c`/`.h` | Core kernel subsystems (proc, vm, file system, etc.) |
+A test program `test` is provided to validate the implementation:
+- Print page table mappings for selected addresses (`print_pt`)
+- Test a user-space syscall (`ugetpid_test`)
+- Print kernel page table layout (`print_kpt`) [stubbed]
+- Check behavior with large allocations / superpages (`superpg_test`)
 
-## Getting Started
+---
 
-### Prerequisites
-- **ARM GCC Toolchain**: `arm-none-eabi-gcc` (for ARMv6/ARMv7) or `aarch64-linux-gnu-gcc` (for ARMv8/AArch64, Pi 5).
-- **QEMU**: For ARM system emulation and testing.
-- **Make**: Standard build utility.
+## Implementation Details
 
-### Building xv6-pi5
-1. **Clone the Repository**:
-   ```bash
-   git clone -b xv6-pi5 https://github.com/bobbysharma05/OS.git
-   cd OS/src
-   ```
-2. **Build the Kernel and User Programs**:
+### New Syscall: `pgpte`
+- **Prototype (user.h):**
+  ```c
+  int pgpte(uint va);
+
+* **Kernel Implementation (`sysproc.c`):**
+
+  ```c
+    int 
+    sys_pgpte(void)
+    {
+    uint addr;
+    if (argint(0, (int*)&addr) < 0)  // Use argint instead of argaddr for ARM
+        return -1;
+
+    struct proc *p = proc;
+    if (p == 0)
+        return 0;
+
+    pte_t *pte = walkpgdir(p->pgdir, (void*)addr, 0); // Use walkpgdir from vm.c
+    if (pte == 0)
+        return 0;
+
+    return *pte;  // Return the PTE value directly
+    }
+  ```
+* **Syscall Wiring:**
+
+  * Added `SYS_pgpte` to `syscall.h`.
+  * Added `[SYS_pgpte] sys_pgpte,` in `syscall.c`.
+  * Added `SYSCALL(pgpte)` in `usys.S`.
+
+---
+
+### Test Program (`test.c`)
+
+1. **`print_pt`**
+
+   * Iterates over low and high virtual addresses.
+   * Calls `pgpte(va)` to fetch the entry.
+   * Prints VA, raw PTE, physical address (`PT_ADDR(pte)`), and permissions (`PTE_AP(pte)`).
+
+2. **`ugetpid_test`**
+
+   * Forks multiple times to ensure syscall table expansion works.
+   * Currently just a stub for `ugetpid`.
+
+3. **`print_kpt`**
+
+   * Stubbed out; prints placeholder messages.
+
+4. **`superpg_test`**
+
+   * Expands heap with `sbrk(N)`.
+   * Aligns to a superpage boundary.
+   * Calls `supercheck` to verify contiguous mappings and read/write correctness.
+
+---
+
+## Example Run
+
+When running `test` inside xv6:
+
+```
+init: starting sh
+$ test
+print_pt starting
+va 0x0 pte 0x7FF703E pa 0x7FF7000 perm 0x3
+va 0x1000 pte 0x7FF803E pa 0x7FF8000 perm 0x3
+va 0x2000 pte 0x7FF901E pa 0x7FF9000 perm 0x1
+va 0x3000 pte 0x7FFA03E pa 0x7FFA000 perm 0x3
+...
+print_pt: OK
+ugetpid_test starting
+ugetpid_test: OK
+print_kpt starting
+print_kpt: OK
+superpg_test starting
+Testing superpage at va 0x200000
+First page at va 0x200000: PTE 0x7DEA03E (phys 0x7DEA000)
+Non-contiguous pages: va 0x213000, expected pa 0x7DFD000, got pa 0x7DBD000
+test: superpg_test failed: pte different, pid=3
+```
+
+---
+
+## Observations
+
+* `print_pt` successfully dumps valid PTEs for low VAs (heap/code/data).
+* `ugetpid_test` runs successfully.
+* `print_kpt` is a placeholder, not yet connected to kernel mappings.
+* `superpg_test` fails due to **non-contiguous page allocation** by the xv6 allocator.
+  xv6 does not guarantee physically contiguous pages for large allocations, so the test detects mismatched physical frames.
+
+---
+
+## Limitations / Future Work
+
+* **Superpages**: xv6’s default allocator provides scattered pages. To pass `superpg_test`, we would need:
+
+  * A superpage-aware allocator.
+  * Or a check that tolerates non-contiguity.
+* **Kernel Page Table Print (`print_kpt`)**: Currently stubbed, can be extended with a syscall that walks kernel mappings.
+* **Permission decoding**: Only minimal permission bits (`PTE_AP`) shown; more flags (valid, global, device memory) could be printed.
+
+---
+
+## How to Build and Run
+
+1. Clone xv6-ARM repository.
+2. Apply syscall modifications (`sys_pgpte` and syscall wiring).
+3. Place `test.c` in `user/`.
+4. Rebuild:
+
    ```bash
    make clean
-   make
+   
    ```
-3. **Run in QEMU**:
+5. Boot xv6 in QEMU:
+
    ```bash
-   qemu-system-arm -M versatilepb -m 128 -cpu arm1176 -nographic -kernel kernel.elf
+   make qemu
    ```
-   You should see the xv6 shell prompt: `$`
+6. Inside xv6 shell:
 
-## Features
-- **Minimal Unix-like Kernel**: Process management, virtual memory, system calls.
-- **ARM Support**: All low-level CPU, trap, and MMU code adapted for ARM.
-- **Shell and Userland**: Simple shell and standard Unix utilities (ls, cat, echo, etc.).
-- **File System**: xv6-style file system with support for basic file operations.
-- **UART Console**: Serial console for kernel and shell I/O.
-- **QEMU Compatibility**: Easily testable in QEMU before deploying to hardware.
+   ```
+   $ test
+   ```
 
-## Key ARM-Specific Components
-- **CPU and MMU Initialization**: Implemented in `arm.c`, `arm.h`, `mmu.h`, and associated assembly files. Handles setting up the ARM page tables, enabling the MMU, and configuring CPU modes.
-- **Trap and Interrupt Handling**: Assembly files (`asm.S`, `trap_asm.S`, `entry.S`) provide the trap vector and interrupt entry points. Kernel C code handles dispatch and processing.
-- **UART/Console**: `console.c` and device drivers in `device/` configure and use the Raspberry Pi’s UART for boot and shell interaction.
-- **Linker Script**: `kernel.ld` ensures the kernel is loaded at the correct physical address for ARM.
+---
 
-## Porting Notes
-- **Architecture-Specific Files**: All files related to CPU initialization, assembly, MMU, and device drivers are ARM-specific and differ from the x86/RISC-V versions of xv6.
-- **Build System**: The `Makefile` and build scripts are set up for ARM toolchains. Adjust toolchain paths if necessary for your environment.
-- **Testing**: QEMU is used for initial bring-up. For real Raspberry Pi 5 hardware, further adaptation (especially for new peripherals) may be required.
+## Conclusion
 
-## Usage Example
-```bash
-$ ls
-.              1 1 512
-..             1 1 512
-cat            2 2 8620
-echo           2 3 8340
-grep           2 4 9528
-init           2 5 8560
-kill           2 6 8332
-ln             2 7 8364
-ls             2 8 9332
-mkdir          2 9 8412
-rm             2 10 8404
-sh             2 11 13532
-stressfs       2 12 8616
-usertests      2 13 32956
-wc             2 14 8904
-zombie         2 15 8184
-UNIX           2 16 7828
-console        3 17 0
-$
-```
-This demonstrates a successful boot, shell launch, and file system access.
+This project demonstrates how to:
+
+* Extend xv6 with new syscalls (`pgpte`).
+* Inspect user-level page tables from user space.
+* Validate mapping correctness with targeted tests.
+
+`test` verifies basic functionality successfully, but highlights the limitations of xv6’s page allocator regarding superpage support.
+
+
+---
+

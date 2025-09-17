@@ -27,3 +27,5 @@
 #define SYS_getpinfo    23
 #define SYS_settickets  24
 #define SYS_srand       25
+
+#define SYS_pgpte       26

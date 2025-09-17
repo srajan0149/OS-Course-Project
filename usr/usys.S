@@ -38,3 +38,5 @@ SYSCALL(getprocs)
 SYSCALL(getpinfo)
 SYSCALL(settickets)
 SYSCALL(srand)
+
+SYSCALL(pgpte)
