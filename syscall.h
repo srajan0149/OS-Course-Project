@@ -31,3 +31,15 @@
 #define SYS_pgpte       26
 #define SYS_ugetpid     27
 #define SYS_kpt         28
+
+///////////////// New syscalls ///////////////
+#define SYS_thread_create       29 // 22
+#define SYS_thread_exit         30 // 23
+#define SYS_thread_join         31 // 24
+#define SYS_waitpid             32 // 30
+#define SYS_barrier_init        33 // 31
+#define SYS_barrier_check       34 // 32
+#define SYS_sleepChan           35 // 36
+#define SYS_getChannel          36 // 37
+#define SYS_sigChan             37 // 38
+#define SYS_sigOneChan          38 // 39

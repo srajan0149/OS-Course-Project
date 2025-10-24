@@ -31,6 +31,7 @@ OBJS = \
 	trap_asm.o\
 	trap.o\
 	vm.o \
+	barrier.o\
 	\
 	device/picirq.o \
 	device/timer.o \
@@ -60,7 +61,7 @@ $(addprefix build/,$(INITCODE_OBJ)): initcode.S
 	$(call AS_WITH, -nostdinc -I.)
 
 #initcode is linked into the kernel, it will be used to craft the first process
-build/initcode: $(addprefix build/,$(INITCODE_OBJ))
+build/initcode: $(addprefix build/,$(INITCODE_OBJ))	
 	$(call LINK_INIT, -N -e start -Ttext 0)
 	$(call OBJCOPY_INIT)
 	$(OBJDUMP) -S $< > initcode.asm

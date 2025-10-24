@@ -125,6 +125,19 @@ extern int sys_pgpte(void); // assignment 03
 extern int sys_ugetpid(void); // assignment 01
 extern int sys_kpt(void);
 
+////////////// New addition //////////////////
+extern int sys_thread_create(void);
+extern int sys_thread_exit(void);
+extern int sys_thread_join(void);
+extern int sys_waitpid(void);
+extern int sys_barrier_init(void);
+extern int sys_barrier_check(void);
+extern int sys_sleepChan(void);
+extern int sys_getChannel(void);
+extern int sys_sigChan(void);
+extern int sys_sigOneChan(void);
+///////////// End of new addition /////////////
+
 static int (*syscalls[])(void) = {
         [SYS_fork]      sys_fork,
         [SYS_exit]      sys_exit,
@@ -154,6 +167,22 @@ static int (*syscalls[])(void) = {
         [SYS_pgpte]     sys_pgpte, // assignment 03
         [SYS_ugetpid]   sys_ugetpid,
         [SYS_kpt]       sys_kpt,
+
+///////////////// New addition /////////////////
+        [SYS_thread_create]         sys_thread_create,
+        [SYS_thread_exit]           sys_thread_exit,
+        [SYS_thread_join]           sys_thread_join,
+        [SYS_waitpid]               sys_waitpid,
+        [SYS_barrier_init]          sys_barrier_init,
+        [SYS_barrier_check]         sys_barrier_check,
+//////////////// End of new addition ///////////
+
+/////////// Final parts of threads lab/////////
+        [SYS_sleepChan]             sys_sleepChan,
+        [SYS_getChannel]            sys_getChannel,
+        [SYS_sigChan]               sys_sigChan,
+        [SYS_sigOneChan]            sys_sigOneChan,
+/////////// End of final parts of threads lab/////////
 };
 
 void syscall(void)

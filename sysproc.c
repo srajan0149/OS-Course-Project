@@ -152,3 +152,48 @@ sys_kpt(void)
   kpt_print();
   return 0;
 }
+
+// Assignment 4:
+//// New code goes here
+int sys_thread_create(void){
+  return -1;
+}
+
+int sys_thread_exit(void){
+  return -1;
+}
+
+int sys_thread_join(void){
+  return -1;
+}
+
+int sys_barrier_init(void)
+{
+  return -1;
+}
+
+int sys_barrier_check(void)
+{
+  return -1;
+}
+
+int sys_waitpid(void)
+{
+  return -1;
+}
+
+int sys_sleepChan(void) {
+  return -1;
+}
+
+int sys_getChannel(void) {
+  return -1;
+}
+
+int sys_sigChan(void) {
+  return -1;
+}
+
+int sys_sigOneChan(void) {
+  return -1;
+}
