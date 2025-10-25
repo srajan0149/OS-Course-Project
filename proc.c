@@ -666,11 +666,15 @@ int
 thread_create(uint *tid, void *(*func)(void *), void *arg)
 {
     struct proc *np;
-
-    // Allocate a new proc structure
+   // Allocate a new proc structure
     if((np = allocproc()) == 0) {
         return -1;
     }
+    np->kstack = kalloc();
+    if (!np->kstack) { np->state = UNUSED; return -1; }
+  
+    np->tf = (struct trapframe*)(np->kstack + KSTACKSIZE - sizeof(struct trapframe));
+
 
     // Mark it as a thread and link it to the main process
     np->is_thread = 1;
@@ -691,7 +695,7 @@ thread_create(uint *tid, void *(*func)(void *), void *arg)
     np->main_thread->sz = sz;
     np->sz = sz;
 
-    uint stack_top = sz; // top of the new stack
+    // uint stack_top = sz; // top of the new stack
 
     // Copy trapframe from parent
     *np->tf = *proc->tf;
@@ -699,7 +703,7 @@ thread_create(uint *tid, void *(*func)(void *), void *arg)
     // Set up trapframe for new thread
     np->tf->pc = (uint)func;       // entry point
     np->tf->r0 = (uint)arg;        // argument in ARM
-    np->tf->sp_usr = stack_top;    // stack pointer
+    np->tf->sp_usr = np->stack_base + PTE_SZ;    // stack pointer
     np->tf->lr_usr = 0;            // clear link register
 
     // Duplicate open files and cwd (shared descriptors)
@@ -775,7 +779,7 @@ thread_join(uint tid)
                 // If it’s a zombie, clean it up
                 if (p->state == ZOMBIE) {
                     // Free the thread’s user stack page
-                    deallocuvm(p->pgdir, p->stack_base + PTE_SZ, p->stack_base);
+                    deallocuvm(p->pgdir, p->stack_base , p->stack_base+ PTE_SZ);
 
                     // Free kernel stack
                     kfree(p->kstack, PTE_SHIFT);
@@ -803,6 +807,65 @@ thread_join(uint tid)
         }
 
         // Sleep until a thread_exit() wakes us up
-        sleep(proc, &ptable.lock);
+        sleep(proc->main_thread, &ptable.lock);
+    }
+}
+int
+waitpid(int pid, int *status)
+{
+    struct proc *p;
+    int havekids, pid_ret;
+
+    acquire(&ptable.lock);
+
+    for (;;) {
+        havekids = 0;
+
+        // Search through the process table for child processes
+        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+            if (p->parent != proc)   // Only children of the calling process
+                continue;
+
+            havekids = 1;
+
+            // Match the specific PID we’re waiting for
+            if (p->pid == pid) {
+                // If the child has exited (ZOMBIE state)
+                if (p->state == ZOMBIE) {
+                    pid_ret = p->pid;
+
+                    if (status)
+                        *status = 0;
+
+                    // Free resources
+                    kfree(p->kstack, PTE_SHIFT);
+                    p->kstack = 0;
+
+                    freevm(p->pgdir);
+                    p->pgdir = 0;
+
+                    // Reset proc fields
+                    p->state = UNUSED;
+                    p->pid = 0;
+                    p->parent = 0;
+                    p->name[0] = 0;
+                    p->killed = 0;
+                    p->is_thread = 0;
+                    p->main_thread = 0;
+
+                    release(&ptable.lock);
+                    return pid_ret;
+                }
+            }
+        }
+
+        // If no children or target PID not found
+        if (!havekids || proc->killed) {
+            release(&ptable.lock);
+            return -1;
+        }
+
+        // Sleep until a child exits
+        sleep(proc->main_thread, &ptable.lock);
     }
 }

@@ -160,7 +160,8 @@ int sys_thread_create(void){
 }
 
 int sys_thread_exit(void){
-  return thread_exit();
+  thread_exit();
+  return 0;
 }
 
 int sys_thread_join(void){
@@ -169,31 +170,41 @@ int sys_thread_join(void){
 
 int sys_barrier_init(void)
 {
-  return -1;
+  return barrier_init((int)proc->tf->r1);
 }
 
 int sys_barrier_check(void)
 {
-  return -1;
+  
+  barrier_check();
+  return 0;
 }
-
-int sys_waitpid(void)
+int
+sys_waitpid(void)
 {
-  return -1;
+  int pid;
+  int *status;
+
+  if(argint(0, &pid) < 0)
+    return -1;
+  if(argptr(1, (void*)&status, sizeof(*status)) < 0)
+    return -1;
+  return waitpid(pid, status);
 }
 
-int sys_sleepChan(void) {
-  return -1;
-}
 
-int sys_getChannel(void) {
-  return -1;
-}
+// int sys_sleepChan(void) {
+//   return -1;
+// }
 
-int sys_sigChan(void) {
-  return -1;
-}
+// int sys_getChannel(void) {
+//   return -1;
+// }
 
-int sys_sigOneChan(void) {
-  return -1;
-}
+// int sys_sigChan(void) {
+//   return -1;
+// }
+
+// int sys_sigOneChan(void) {
+//   return -1;
+// }

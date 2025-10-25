@@ -1,6 +1,6 @@
 #ifndef PROC_INCLUDE_
 #define PROC_INCLUDE_
-
+#include "param.h"  
 // Per-CPU state, now we only support one CPU
 struct cpu {
     uchar           id;             // index into cpus[] below

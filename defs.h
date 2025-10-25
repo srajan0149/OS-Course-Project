@@ -29,6 +29,14 @@ typedef uint32	pte_t;
 typedef uint32  pde_t;
 extern  uint32  _kernel_pgtbl;
 typedef void (*ISR) (struct trapframe *tf, int n);
+int             thread_join(uint);
+int thread_create(uint *tid, void *(*func)(void *), void *arg);
+void thread_exit(void);
+
+// ...existing code...
+// Barrier-related declarations
+int             barrier_init(int);
+int             barrier_check(void);
 
 // arm.c
 void            set_stk(uint mode, uint addr);
@@ -101,11 +109,11 @@ void            ideinit(void);
 void            iderw(struct buf*);
 
 // kalloc.c
-/*char*           kalloc(void);
-void            kfree(char*);
+char*           kalloc(void);
+// void            kfree(char*);
 void            kinit1(void*, void*);
 void            kinit2(void*, void*);
-void            kmem_init (void);*/
+void            kmem_init (void);
 
 // log.c
 void            initlog(void);
@@ -144,6 +152,8 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
+int waitpid(int pid, int *status);
+
 
 // swtch.S
 void            swtch(struct context**, struct context*);

@@ -131,42 +131,73 @@ memmove(void *vdst, void *vsrc, int n)
 }
 
 // Assignment 4
-void initiateLock(struct lock* l) {
+// void initiateLock(struct lock *l)
+// {
+//     l->lockvar = 0;
+//     l->isInitiated = 1;
+// }
 
-}
+// void acquireLock(struct lock *l)
+// {
+//     while (__sync_lock_test_and_set(&(l->lockvar), 1) != 0)
+//     {
+//         // Busy wait until lock is free
+//         sleepChan((int)l); // sleep on lock address as channel
+//     }
+// }
 
-void acquireLock(struct lock* l) {
+// void releaseLock(struct lock *l)
+// {
+//     l->lockvar = 0;
+//     sigChan((int)l); // wake up all waiting threads
+// }
 
-}
+// void initiateCondVar(struct condvar *cv)
+// {
+//     cv->var = getChannel(); // assign a unique channel for this CV
+//     cv->isInitiated = 1;
+// }
 
-void releaseLock(struct lock* l) {
+// void condWait(struct condvar *cv, struct lock *l)
+// {
+//     releaseLock(l);     // release the lock before sleeping
+//     sleepChan(cv->var); // sleep on the condition variable channel
+//     acquireLock(l);     // reacquire the lock before returning
+// }
 
-}
+// void broadcast(struct condvar *cv)
+// {
+//     sigChan(cv->var); // wake up all threads waiting on cv
+// }
 
-void initiateCondVar(struct condvar* cv) {
+// void signal(struct condvar *cv)
+// {
+//     sigOneChan(cv->var); // wake up one thread waiting on cv
+// }
 
-}
+// void semInit(struct semaphore *s, int initVal)
+// {
+//     s->ctr = initVal;
+//     initiateLock(&(s->l));
+//     initiateCondVar(&(s->cv));
+//     s->isInitiated = 1;
+// }
 
-void condWait(struct condvar* cv, struct lock* l) {
+// void semUp(struct semaphore *s)
+// {
+//     acquireLock(&(s->l));
+//     s->ctr++;
+//     broadcast(&(s->cv)); // wake up all waiting threads
+//     releaseLock(&(s->l));
+// }
 
-}
-
-void broadcast(struct condvar* cv) {
-
-}
-
-void signal(struct condvar* cv) {
-
-}
-
-void semInit(struct semaphore* s, int initVal) {
-
-}
-
-void semUp(struct semaphore* s) {
-
-}
-
-void semDown(struct semaphore* s) {
-
-}
+// void semDown(struct semaphore *s)
+// {
+//     acquireLock(&(s->l));
+//     while (s->ctr == 0)
+//     {
+//         condWait(&(s->cv), &(s->l)); // wait until available
+//     }
+//     s->ctr--;
+//     releaseLock(&(s->l));
+// }
