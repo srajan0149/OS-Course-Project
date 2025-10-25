@@ -156,15 +156,15 @@ sys_kpt(void)
 // Assignment 4:
 //// New code goes here
 int sys_thread_create(void){
-  return -1;
+  return thread_create((uint *)proc->tf->r1, (void*)proc->tf->r2, (void *)proc->tf->r3);
 }
 
 int sys_thread_exit(void){
-  return -1;
+  return thread_exit();
 }
 
 int sys_thread_join(void){
-  return -1;
+  return thread_join((uint)proc->tf->r1);
 }
 
 int sys_barrier_init(void)

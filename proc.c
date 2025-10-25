@@ -90,6 +90,8 @@ static struct proc* allocproc(void)
     p->boostsleft   = 0;
     p->wake_at      = 0;   // 0 if process is not sleeping on ticks
 
+    p->is_thread = 0;
+
     release(&ptable.lock);
 
     // Allocate kernel stack.
@@ -658,4 +660,149 @@ int getpinfo(struct pstat *pstat){
         strcpy(pstat->name[i], p->name);
     }
     return 0;
+}
+
+int
+thread_create(uint *tid, void *(*func)(void *), void *arg)
+{
+    struct proc *np;
+
+    // Allocate a new proc structure
+    if((np = allocproc()) == 0) {
+        return -1;
+    }
+
+    // Mark it as a thread and link it to the main process
+    np->is_thread = 1;
+    np->main_thread = proc->is_thread ? proc->main_thread : proc;
+    np->parent = np->main_thread;
+
+    // Share the same address space
+    np->pgdir = np->main_thread->pgdir;
+
+    // Allocate one user page for the thread’s stack
+    uint sz = np->main_thread->sz;
+    sz = allocuvm(np->pgdir, sz, sz + PTE_SZ);
+    if (sz == 0) {
+        np->state = UNUSED;
+        return -1;
+    }
+    np->stack_base = sz - PTE_SZ;
+    np->main_thread->sz = sz;
+    np->sz = sz;
+
+    uint stack_top = sz; // top of the new stack
+
+    // Copy trapframe from parent
+    *np->tf = *proc->tf;
+
+    // Set up trapframe for new thread
+    np->tf->pc = (uint)func;       // entry point
+    np->tf->r0 = (uint)arg;        // argument in ARM
+    np->tf->sp_usr = stack_top;    // stack pointer
+    np->tf->lr_usr = 0;            // clear link register
+
+    // Duplicate open files and cwd (shared descriptors)
+    for (int i = 0; i < NOFILE; i++) {
+        if (proc->ofile[i]) {
+            np->ofile[i] = filedup(proc->ofile[i]);
+        }
+    }
+    np->cwd = idup(proc->cwd);
+
+    // Copy name
+    safestrcpy(np->name, proc->name, sizeof(proc->name));
+
+    // Assign tid and mark runnable
+    *tid = np->pid;
+    np->thread_id = np->pid;
+    np->state = RUNNABLE;
+
+    return 0;
+}
+
+
+void
+thread_exit(void)
+{
+    // If main process calls thread_exit(), ignore.
+    if (!proc->is_thread) {
+        return;
+    }
+
+    acquire(&ptable.lock);
+
+    // Release current working directory
+    iput(proc->cwd);
+    proc->cwd = 0;
+
+    // Mark as ZOMBIE
+    proc->state = ZOMBIE;
+
+    // Wake up the main thread (so thread_join can proceed)
+    wakeup(proc->main_thread);
+
+    release(&ptable.lock);
+
+    // Switch to scheduler; we’ll never return
+    sched();
+
+    panic("thread_exit: should not return");
+}
+
+
+int
+thread_join(uint tid)
+{
+    struct proc *p;
+    int found = 0;
+
+    // Only main threads (not subthreads) should call join
+    if (proc->is_thread) {
+        return -1;
+    }
+
+    acquire(&ptable.lock);
+
+    for (;;) {
+        found = 0;
+
+        // Search for the thread with this tid
+        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+            if (p->pid == tid && p->is_thread && p->main_thread == proc) {
+                found = 1;
+
+                // If it’s a zombie, clean it up
+                if (p->state == ZOMBIE) {
+                    // Free the thread’s user stack page
+                    deallocuvm(p->pgdir, p->stack_base + PTE_SZ, p->stack_base);
+
+                    // Free kernel stack
+                    kfree(p->kstack, PTE_SHIFT);
+                    p->kstack = 0;
+
+                    // Mark as UNUSED
+                    p->state = UNUSED;
+                    p->pid = 0;
+                    p->parent = 0;
+                    p->name[0] = 0;
+                    p->killed = 0;
+                    p->is_thread = 0;
+                    p->main_thread = 0;
+
+                    release(&ptable.lock);
+                    return 0;
+                }
+            }
+        }
+
+        // If no such thread found and we’ve checked all — invalid tid
+        if (!found) {
+            release(&ptable.lock);
+            return -1;
+        }
+
+        // Sleep until a thread_exit() wakes us up
+        sleep(proc, &ptable.lock);
+    }
 }

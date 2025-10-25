@@ -72,6 +72,10 @@ struct proc {
     int             runticks;       // total number of timer ticks this process has been scheduled
     int             boostsleft;     // how many more ticks will this process be boosted?
     int             wake_at;
+    int             is_thread;
+    int             stack_base;
+    struct proc*    main_thread;
+    int             thread_id;
 };
 
 // per-process state available for user programs via sys_getprocs
