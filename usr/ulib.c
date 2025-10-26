@@ -129,75 +129,121 @@ memmove(void *vdst, void *vsrc, int n)
         *dst++ = *src++;
     return vdst;
 }
-
+static inline uint
+xchg(volatile uint *addr, uint newval)
+{
+    uint result;
+    uint tmp;
+    
+    // ARMv6 atomic exchange using ldrex/strex
+    asm volatile(
+        "1: ldrex %0, [%2]\n"           // Load exclusive from addr into result
+        "   strex %1, %3, [%2]\n"       // Try to store newval to addr
+        "   cmp %1, #0\n"               // Check if store succeeded
+        "   bne 1b\n"                   // If failed (tmp != 0), retry
+        : "=&r" (result), "=&r" (tmp)
+        : "r" (addr), "r" (newval)
+        : "cc", "memory"
+    );
+    
+    return result;
+}
 // Assignment 4
-void initiateLock(struct lock *l)
+void
+initiateLock(struct lock* l)
 {
     l->lockvar = 0;
-    l->isInitiated = 1;
 }
 
-void acquireLock(struct lock *l)
+void
+acquireLock(struct lock* l)
 {
-    while (__sync_lock_test_and_set(&(l->lockvar), 1) != 0)
-    {
-        // Busy wait until lock is free
-        sleepChan((int)l); // sleep on lock address as channel
+    // Spin until we acquire the lock
+    while(xchg((volatile unsigned int*)&l->lockvar, 1) != 0)
+        ;
+}
+
+void
+releaseLock(struct lock* l)
+{
+    // Release the lock
+    xchg((volatile unsigned int*)&l->lockvar, 0);
+}
+// Condition variable implementation
+void
+initiateCondVar(struct condvar* cv)
+{
+    cv->var = getChannel();
+    cv->isInitiated = 1;
+}
+
+void
+condWait(struct condvar* cv, struct lock* l)
+{
+    if(!cv->isInitiated)
+        return;
+    
+    // Release lock and sleep
+    releaseLock(l);
+    sleepChan(cv->var);
+    // Reacquire lock after waking up
+    acquireLock(l);
+}
+
+void
+broadcast(struct condvar* cv)
+{
+    if(!cv->isInitiated)
+        return;
+    
+    sigChan(cv->var);
+}
+
+void
+signal(struct condvar* cv)
+{
+    if(!cv->isInitiated)
+        return;
+    
+    sigOneChan(cv->var);
+}
+
+
+void semInit(struct semaphore* s, int initVal) {
+    s->ctr = initVal;
+    initiateLock(&s->l);
+    initiateCondVar(&s->cv);
+    s->isInitiated = 1;
+}
+
+void semUp(struct semaphore* s) {
+    if (!s->isInitiated) {
+        printf(1, "Error: semaphore not initialized\n");
+        return;
     }
+
+    acquireLock(&s->l);
+    s->ctr++;
+
+    // Wake up exactly one waiting thread
+    signal(&s->cv);
+
+    releaseLock(&s->l);    
 }
 
-void releaseLock(struct lock *l)
-{
-    l->lockvar = 0;
-    sigChan((int)l); // wake up all waiting threads
+void semDown(struct semaphore* s) {
+    if (!s->isInitiated) {
+        printf(1, "Error: semaphore not initialized\n");
+        return;
+    }
+
+    acquireLock(&s->l);
+    s->ctr--;
+
+    if (s->ctr < 0) {
+        // Wait until another process signals
+        condWait(&s->cv, &s->l);
+    }
+
+    releaseLock(&s->l);
 }
-
-// void initiateCondVar(struct condvar *cv)
-// {
-//     cv->var = getChannel(); // assign a unique channel for this CV
-//     cv->isInitiated = 1;
-// }
-
-// void condWait(struct condvar *cv, struct lock *l)
-// {
-//     releaseLock(l);     // release the lock before sleeping
-//     sleepChan(cv->var); // sleep on the condition variable channel
-//     acquireLock(l);     // reacquire the lock before returning
-// }
-
-// void broadcast(struct condvar *cv)
-// {
-//     sigChan(cv->var); // wake up all threads waiting on cv
-// }
-
-// void signal(struct condvar *cv)
-// {
-//     sigOneChan(cv->var); // wake up one thread waiting on cv
-// }
-
-// void semInit(struct semaphore *s, int initVal)
-// {
-//     s->ctr = initVal;
-//     initiateLock(&(s->l));
-//     initiateCondVar(&(s->cv));
-//     s->isInitiated = 1;
-// }
-
-// void semUp(struct semaphore *s)
-// {
-//     acquireLock(&(s->l));
-//     s->ctr++;
-//     broadcast(&(s->cv)); // wake up all waiting threads
-//     releaseLock(&(s->l));
-// }
-
-// void semDown(struct semaphore *s)
-// {
-//     acquireLock(&(s->l));
-//     while (s->ctr == 0)
-//     {
-//         condWait(&(s->cv), &(s->l)); // wait until available
-//     }
-//     s->ctr--;
-//     releaseLock(&(s->l));
-// }

@@ -218,20 +218,83 @@ sys_waitpid(void)
     return -1;
   return waitpid(pid, status);
 }
+// Channel management
+
+static int next_channel = 0x10000;  
+static struct spinlock channel_lock;
 
 
-// int sys_sleepChan(void) {
-//   return -1;
-// }
+void
+init_channel_lock(void)
+{
+    initlock(&channel_lock, "channel");
+}
 
-// int sys_getChannel(void) {
-//   return -1;
-// }
+int
+sys_getChannel(void)
+{
+    int channel;
+    acquire(&channel_lock);
+    channel = next_channel++;
+    next_channel += 4; 
+    release(&channel_lock);
+    return channel;
+}
 
-// int sys_sigChan(void) {
-//   return -1;
-// }
+int
+sys_sleepChan(void)
+{
+    int channel;
+    
+    if(argint(0, &channel) < 0)
+        return -1;
+    
+    if(channel <= 0)
+        return -1;
+    
+    // Sleep on the channel address (cast channel to pointer)
+    // Use a dummy lock since sleep requires one
+    struct spinlock lk;
+    initlock(&lk, "sleepchan");
+    acquire(&lk);
+    sleep((void*)(uint)channel, &lk);
+    release(&lk);
+    
+    return 0;
+}
 
-// int sys_sigOneChan(void) {
-//   return -1;
-// }
+
+int
+sys_sigChan(void)
+{
+    int channel;
+    
+    if(argint(0, &channel) < 0)
+        return -1;
+    
+    if(channel <= 0)
+        return -1;
+    
+    // Wake up all processes on this channel
+    wakeup((void*)channel);
+    
+    return 0;
+}
+
+
+int
+sys_sigOneChan(void)
+{
+    int channel;
+    
+    if(argint(0, &channel) < 0)
+        return -1;
+    
+    if(channel <= 0)
+        return -1;
+    
+    // Wake up one process sleeping on this channel
+    wakeup1_chan((void*)channel);
+    
+    return 0;
+}

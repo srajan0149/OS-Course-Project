@@ -35,7 +35,7 @@ int main(){
     initiateCondVar(&cv);
     acquireLock(&l);
     thread_create(&tid1,thread2,(void*)&a);
-    sleep(200);
+    // sleep(200);
     condWait(&cv,&l);
     releaseLock(&l);
     thread_join(tid1);

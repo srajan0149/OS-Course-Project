@@ -132,10 +132,10 @@ extern int sys_thread_join(void);
 extern int sys_waitpid(void);
 extern int sys_barrier_init(void);
 extern int sys_barrier_check(void);
-// extern int sys_sleepChan(void);
-// extern int sys_getChannel(void);
-// extern int sys_sigChan(void);
-// extern int sys_sigOneChan(void);
+extern int sys_sleepChan(void);
+extern int sys_getChannel(void);
+extern int sys_sigChan(void);
+extern int sys_sigOneChan(void);
 ///////////// End of new addition /////////////
 
 static int (*syscalls[])(void) = {
@@ -178,10 +178,10 @@ static int (*syscalls[])(void) = {
 //////////////// End of new addition ///////////
 
 /////////// Final parts of threads lab/////////
-        // [SYS_sleepChan]             sys_sleepChan,
-        // [SYS_getChannel]            sys_getChannel,
-        // [SYS_sigChan]               sys_sigChan,
-        // [SYS_sigOneChan]            sys_sigOneChan,
+        [SYS_sleepChan]             sys_sleepChan,
+        [SYS_getChannel]            sys_getChannel,
+        [SYS_sigChan]               sys_sigChan,
+        [SYS_sigOneChan]            sys_sigOneChan,
 /////////// End of final parts of threads lab/////////
 };
 

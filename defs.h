@@ -153,6 +153,7 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 int waitpid(int pid, int *status);
+void            wakeup1_chan(void*);
 
 
 // swtch.S
@@ -224,9 +225,10 @@ void            paging_init (uint phy_low, uint phy_hi);
 
 pte_t*          walkpgdir(pde_t *pgdir, const void *va, int alloc);
 int             map_page(pde_t *pgdir, void *va, uint pa, int ap);
-void            sleepChan(void* chan);
-int             getChannel(void);
-void            sigChan(void* chan);
-void            sigOneChan(void* chan);
+// void            sleepChan(void* chan);
+// int             getChannel(void);
+// void            sigChan(void* chan);
+// void            sigOneChan(void* chan);
+void            init_channel_lock(void);
 
 #endif

@@ -1017,6 +1017,22 @@ int waitpid(int pid, int *status)
     }
 }
 
+// Wake up one process sleeping on chan
+void
+wakeup1_chan(void *chan)
+{
+    struct proc *p;
+    
+    acquire(&ptable.lock);
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(p->state == SLEEPING && p->chan == chan){
+            p->state = RUNNABLE;
+           
+            break;
+        }
+    }
+    release(&ptable.lock);
+}
 // assignment 04: task 3:
 // Simple global counter for unique channels
 // static int nextChannel = 1;
