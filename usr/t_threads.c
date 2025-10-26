@@ -5,7 +5,7 @@ void* thread1(void* arg){
     printf(1, "Thread 1 created %d\n", *(int*)arg);
     int* argPtr = (int*)arg;
     *argPtr = (*argPtr + 1);
-    exit(0);
+    thread_exit();
     return 0;
 }
 
@@ -20,9 +20,9 @@ int main(){
     int x = 10;
     uint tid1, tid2;
     thread_create(&tid1, thread1, (void*)&x);
+    thread_join(tid1);
     thread_create(&tid2, thread2, (void*)&x);
     thread_join(tid2);
-    thread_join(tid1);
     printf(1,"Value of x = %d\n",x);
     exit(0);
 }

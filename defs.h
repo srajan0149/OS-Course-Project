@@ -29,9 +29,9 @@ typedef uint32	pte_t;
 typedef uint32  pde_t;
 extern  uint32  _kernel_pgtbl;
 typedef void (*ISR) (struct trapframe *tf, int n);
-int             thread_join(uint);
-int thread_create(uint *tid, void *(*func)(void *), void *arg);
-void thread_exit(void);
+int thread_create(uint *thread_id, void *(*start_routine)(void *), void *arg);
+void thread_exit(void *retval);
+int thread_join(uint thread_id, void **retval);
 
 // ...existing code...
 // Barrier-related declarations
@@ -58,10 +58,10 @@ void            brelse(struct buf*);
 void            bwrite(struct buf*);
 
 // buddy.c
-void            kmem_init (void);
+void            buddy_init (void);
 void            kmem_init2(void *vstart, void *vend);
 void*           kmalloc (int order);
-void            kfree (void *mem, int order);
+void            buddy_kfree (void *mem, int order);
 void            free_page(void *v);
 void*           alloc_page (void);
 void            kmem_test_b (void);
@@ -110,7 +110,7 @@ void            iderw(struct buf*);
 
 // kalloc.c
 char*           kalloc(void);
-// void            kfree(char*);
+void            kfree(char*);
 void            kinit1(void*, void*);
 void            kinit2(void*, void*);
 void            kmem_init (void);
@@ -224,5 +224,9 @@ void            paging_init (uint phy_low, uint phy_hi);
 
 pte_t*          walkpgdir(pde_t *pgdir, const void *va, int alloc);
 int             map_page(pde_t *pgdir, void *va, uint pa, int ap);
+void            sleepChan(void* chan);
+int             getChannel(void);
+void            sigChan(void* chan);
+void            sigOneChan(void* chan);
 
 #endif

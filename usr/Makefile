@@ -36,8 +36,7 @@ UPROGS=\
 # 	_t_sem1\
 # 	_t_sem2\
 # 	_t_sleepwake\
-# 	_t_threads\
-# 	_t_waitpid\
+	_t_waitpid\
 
 
 all: $(FS_IMAGE)

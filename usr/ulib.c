@@ -131,26 +131,26 @@ memmove(void *vdst, void *vsrc, int n)
 }
 
 // Assignment 4
-// void initiateLock(struct lock *l)
-// {
-//     l->lockvar = 0;
-//     l->isInitiated = 1;
-// }
+void initiateLock(struct lock *l)
+{
+    l->lockvar = 0;
+    l->isInitiated = 1;
+}
 
-// void acquireLock(struct lock *l)
-// {
-//     while (__sync_lock_test_and_set(&(l->lockvar), 1) != 0)
-//     {
-//         // Busy wait until lock is free
-//         sleepChan((int)l); // sleep on lock address as channel
-//     }
-// }
+void acquireLock(struct lock *l)
+{
+    while (__sync_lock_test_and_set(&(l->lockvar), 1) != 0)
+    {
+        // Busy wait until lock is free
+        sleepChan((int)l); // sleep on lock address as channel
+    }
+}
 
-// void releaseLock(struct lock *l)
-// {
-//     l->lockvar = 0;
-//     sigChan((int)l); // wake up all waiting threads
-// }
+void releaseLock(struct lock *l)
+{
+    l->lockvar = 0;
+    sigChan((int)l); // wake up all waiting threads
+}
 
 // void initiateCondVar(struct condvar *cv)
 // {

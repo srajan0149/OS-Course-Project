@@ -66,7 +66,7 @@ static inline int available (uint bitmap, int blk_id)
     return bitmap & (1 << (blk_id & 0x1F));
 }
 
-void kmem_init (void)
+void buddy_init (void)
 {
     initlock(&kmem.lock, "kmem");
 }
@@ -107,7 +107,7 @@ void kmem_init2(void *vstart, void *vend)
     kmem.start_heap = align_up(kmem.start + total * sizeof(*mk), 1 << MAX_ORD);
     
     for (i = kmem.start_heap; i < kmem.end; i += (1 << MAX_ORD)){
-        kfree ((void*)i, MAX_ORD);
+        buddy_kfree ((void*)i, MAX_ORD);
     }
 }
 
@@ -282,7 +282,7 @@ void _kfree (void *mem, int order)
 
 // free kernel memory, we require order parameter here to avoid
 // storing size info somewhere which might break the alignment
-void kfree (void *mem, int order)
+void buddy_kfree (void *mem, int order)
 {
     if ((order > MAX_ORD) || (order < MIN_ORD) || (uint)mem & ((1<<order) -1)) {
         panic("kfree: order out of range or memory unaligned\n");
@@ -296,7 +296,7 @@ void kfree (void *mem, int order)
 // free a page
 void free_page(void *v)
 {
-    kfree (v, PTE_SHIFT);
+    buddy_kfree (v, PTE_SHIFT);
 }
 
 // allocate a page

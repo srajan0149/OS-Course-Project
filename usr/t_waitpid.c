@@ -4,6 +4,7 @@
 int main()
 {
   int ret;
+  int status;
   
   ret = fork();
   if(ret == 0)
@@ -13,10 +14,10 @@ int main()
   }
   else
   {
-    int retwait = waitpid(ret+1);
+    int retwait = waitpid(ret+1, &status);
     printf(1, "return value of wrong waitpid %d\n", retwait);
 
-    retwait = waitpid(ret);
+    retwait = waitpid(ret, &status);
     printf(1, "return value of correct waitpid %d\n", retwait);
     
     retwait = wait();

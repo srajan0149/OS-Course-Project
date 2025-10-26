@@ -45,7 +45,7 @@ static void _kpt_free (char *v)
 static void kpt_free (char *v)
 {
     if (v >= (char*)P2V(INIT_KERNMAP)) {
-        kfree(v, PT_ORDER);
+        buddy_kfree(v, PT_ORDER);
         return;
     }
     

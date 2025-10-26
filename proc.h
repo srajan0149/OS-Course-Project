@@ -76,6 +76,8 @@ struct proc {
     int             stack_base;
     struct proc*    main_thread;
     int             thread_id;
+    char            *ustack;
+    void            *retval;
 };
 
 // per-process state available for user programs via sys_getprocs

@@ -155,17 +155,44 @@ sys_kpt(void)
 
 // Assignment 4:
 //// New code goes here
-int sys_thread_create(void){
-  return thread_create((uint *)proc->tf->r1, (void*)proc->tf->r2, (void *)proc->tf->r3);
+int
+sys_thread_create(void)
+{
+  uint thread_id;
+  uint start_routine;  // function pointer
+  uint arg;
+
+  // Fetch arguments from user space
+  if (argptr(0, (void*)&thread_id, sizeof(uint)) < 0)
+    return -1;
+  if (argptr(1, (void*)&start_routine, sizeof(void*)) < 0)
+    return -1;
+  if (argptr(2, (void*)&arg, sizeof(void*)) < 0)
+    return -1;
+
+  // Call kernel-level function
+  return thread_create((uint*)thread_id, (void*(*)(void*))start_routine, (void*)arg);
 }
 
 int sys_thread_exit(void){
-  thread_exit();
+  exit(0);
   return 0;
 }
 
-int sys_thread_join(void){
-  return thread_join((uint)proc->tf->r1);
+int
+sys_thread_join(void)
+{
+     uint thread_id;
+  void **retval;
+
+  // Fetch thread id and return value pointer
+  if (argint(0, (int*)&thread_id) < 0)
+    return -1;
+  if (argptr(1, (void*)&retval, sizeof(void**)) < 0)
+    return -1;
+
+  return thread_join(thread_id, retval);
+
 }
 
 int sys_barrier_init(void)
