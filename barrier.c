@@ -40,11 +40,11 @@ barrier_init(int n)
     if (b_inited)
         return -1;
 
-    acquire(&b_lock);  // Protect initialization
+    initlock(&b_lock, "barrier");
     
     b_N = n;
     b_count = 0;
-    initlock(&b_lock, "barrier");
+    acquire(&b_lock);  // Protect initialization
     b_inited = 1;
     
     release(&b_lock);
