@@ -24,6 +24,7 @@ struct superblock {
 #define NINDIRECT (BSIZE / sizeof(uint))
 #define NDOUBLE (NINDIRECT * NINDIRECT)
 #define MAXFILE (NDIRECT + NINDIRECT + NDOUBLE)
+#define MAXPATH 128  // NEW: Maximum path length we will support
 
 // On-disk inode structure
 struct dinode {

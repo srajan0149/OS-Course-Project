@@ -4,6 +4,8 @@
 // user code, and calls into file.c and fs.c.
 //
 
+#define MAX_SYMLINK_DEPTH 10
+
 #include "types.h"
 #include "defs.h"
 #include "param.h"
@@ -328,30 +330,69 @@ int sys_open(void)
     struct file *f;
     struct inode *ip;
 
+    char path_buf[MAXPATH]; // Kernel buffer for the path
+    int tries = 0;           // Loop counter
+
     if(argstr(0, &path) < 0 || argint(1, &omode) < 0) {
         return -1;
     }
 
-    if(omode & O_CREATE){
-        begin_trans();
-        ip = create(path, T_FILE, 0, 0);
-        commit_trans();
+    if(safestrcpy(path_buf, path, sizeof(path_buf)) < 0) {
+        return -1;
+    }
 
-        if(ip == 0) {
-            return -1;
+    while(tries++ < MAX_SYMLINK_DEPTH){
+        if(omode & O_CREATE){
+            begin_trans();
+            ip = create(path_buf, T_FILE, 0, 0);
+            commit_trans();
+
+            if(ip == 0) {
+                return -1;
+            }
+
+        }
+        else {
+            if((ip = namei(path_buf)) == 0) {
+                return -1;
+            }
+
+            ilock(ip);
+
+            if(ip->type == T_DIR && omode != O_RDONLY){
+                iunlockput(ip);
+                return -1;
+            }
         }
 
-    } else {
-        if((ip = namei(path)) == 0) {
-            return -1;
+            // NEW: Check for symlink
+        if(ip->type != T_SYM) {
+        // It's not a symlink, we are done.
+        // Break the loop and proceed to file allocation.
+            break; 
+        }
+        
+        // NEW: It IS a symlink. Follow it.
+
+        // 1. Unlock the inode. readi() handles its own locking
+        //    and will deadlock if we pass it a locked inode.
+        iunlock(ip);
+
+        // 2. Check if the target path is too long
+        if (ip->size >= MAXPATH) {
+            iput(ip); // Release the symlink inode
+            return -1; // Path too long
         }
 
-        ilock(ip);
-
-        if(ip->type == T_DIR && omode != O_RDONLY){
-            iunlockput(ip);
+        // 3. Read the symlink's content (the new path) into path_buf.
+        if (readi(ip, path_buf, 0, ip->size) != ip->size) {
+            iput(ip); // Read failed, release inode
             return -1;
         }
+    }
+
+    if(tries > MAX_SYMLINK_DEPTH) {
+        return -1;
     }
 
     if((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0){
@@ -529,7 +570,7 @@ sys_symlink(void)
     ilock(dp);
 
     // Allocate a new inode
-    if ((ip = ialloc(dp->dev, T_FILE)) == 0) {
+    if ((ip = ialloc(dp->dev, T_SYM)) == 0) {
         iunlockput(dp);
         commit_trans();
         return -1;
