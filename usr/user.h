@@ -55,6 +55,8 @@ int getChannel(void);
 void sigChan(int);
 void sigOneChan(int);
 
+int symlink(const char*, const char*);
+
 struct lock{
     int lockvar;
     int isInitiated;

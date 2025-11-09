@@ -43,3 +43,4 @@
 #define SYS_getChannel          36 // 37
 #define SYS_sigChan             37 // 38
 #define SYS_sigOneChan          38 // 39
+#define SYS_symlink             39

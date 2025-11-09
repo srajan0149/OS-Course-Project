@@ -36,6 +36,7 @@ UPROGS=\
 	_t_sleepwake\
 	_t_sem1\
 	_t_sem2\
+	_symlink_create_test\
 
 
 all: $(FS_IMAGE)

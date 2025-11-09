@@ -53,3 +53,5 @@ SYSCALL(getChannel)
 SYSCALL(sleepChan)
 SYSCALL(sigChan)
 SYSCALL(sigOneChan)
+
+SYSCALL(symlink)

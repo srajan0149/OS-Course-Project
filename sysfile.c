@@ -505,3 +505,62 @@ int sys_pipe(void)
 
     return 0;
 }
+
+int
+sys_symlink(void)
+{
+    // char *target, *path;
+    // struct inode *ip, *dp;
+    // char name[DIRSIZ];
+
+    // // Get syscall arguments
+    // if (argstr(0, &target) < 0 || argstr(1, &path) < 0)
+    //     return -1;
+
+    // // Start transaction (MUST happen before any fs writes)
+    // begin_trans();
+
+    // // Get parent directory
+    // if ((dp = nameiparent(path, name)) == 0) {
+    //     commit_trans();
+    //     return -1;
+    // }
+
+    // ilock(dp);
+
+    // // Allocate a new inode
+    // if ((ip = ialloc(dp->dev, T_FILE)) == 0) {
+    //     iunlockput(dp);
+    //     commit_trans();
+    //     return -1;
+    // }
+
+    // ilock(ip);
+    // // ip->is_symlink = 1;   // mark inode as symbolic link
+    // ip->nlink = 1;
+    // iupdate(ip);
+
+    // // Write the target path string into the symlink's contents
+    // if (writei(ip, target, 0, strlen(target)) != strlen(target)) {
+    //     iunlockput(ip);
+    //     iunlockput(dp);
+    //     commit_trans();
+    //     return -1;
+    // }
+
+    // // Add directory entry (link)
+    // if (dirlink(dp, name, ip->inum) < 0) {
+    //     iunlockput(ip);
+    //     iunlockput(dp);
+    //     commit_trans();
+    //     return -1;
+    // }
+
+    // iunlockput(ip);
+    // iunlockput(dp);
+
+    // // Finish transaction
+    // commit_trans();
+
+    return 0;
+}

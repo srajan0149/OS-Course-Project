@@ -136,6 +136,7 @@ extern int sys_sleepChan(void);
 extern int sys_getChannel(void);
 extern int sys_sigChan(void);
 extern int sys_sigOneChan(void);
+extern int sys_symlink(void);
 ///////////// End of new addition /////////////
 
 static int (*syscalls[])(void) = {
@@ -183,6 +184,7 @@ static int (*syscalls[])(void) = {
         [SYS_sigChan]               sys_sigChan,
         [SYS_sigOneChan]            sys_sigOneChan,
 /////////// End of final parts of threads lab/////////
+        [SYS_symlink]               sys_symlink
 };
 
 void syscall(void)
